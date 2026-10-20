@@ -173,10 +173,7 @@ export function OrdersPage({ user, onLogout }: { user: User; onLogout: () => voi
           <section className="page-heading">
             <div>
               <span className="eyebrow">TUDO PRONTO PARA A PRÓXIMA ENTREGA</span>
-              <h1>
-                Olá, {firstName}
-                <span> 👋</span>
-              </h1>
+              <h1>Olá, {firstName}</h1>
               <p>Vamos cuidar dos pedidos de hoje?</p>
             </div>
             <Button
