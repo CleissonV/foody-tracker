@@ -8,9 +8,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foody.tracker.auth.infra.UserRepository;
+import com.foody.tracker.orders.infra.OrderRepository;
+import com.foody.tracker.orders.domain.OrderStatus;
 import jakarta.persistence.EntityManagerFactory;
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +28,10 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -29,6 +41,8 @@ class ApiIntegrationTest {
     @Autowired ObjectMapper json;
     @Autowired UserRepository users;
     @Autowired EntityManagerFactory entityManagerFactory;
+    @Autowired OrderRepository orderRepository;
+    @Autowired PlatformTransactionManager transactionManager;
 
     private String email() { return UUID.randomUUID() + "@example.com"; }
     private String body(Object value) throws Exception { return json.writeValueAsString(value); }
@@ -149,6 +163,43 @@ class ApiIntegrationTest {
             .andExpect(status().isConflict()).andExpect(jsonPath("code").value("ORDER_CONFLICT"));
         mvc.perform(get("/api/orders/" + id).session(session)).andExpect(jsonPath("status").value("EM_PREPARO"))
             .andExpect(jsonPath("history.length()").value(2));
+    }
+
+    @Test
+    void twoSimultaneousTransactionsCannotBothCommitAStatusChange() throws Exception {
+        var session = login();
+        var id = UUID.fromString(create(session).get("id").asText());
+        var transactions = new TransactionTemplate(transactionManager);
+        var bothLoaded = new CountDownLatch(2);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            Callable<Boolean> prepare = () -> concurrentChange(transactions, bothLoaded, id, OrderStatus.EM_PREPARO);
+            Callable<Boolean> cancel = () -> concurrentChange(transactions, bothLoaded, id, OrderStatus.CANCELADO);
+            var results = executor.invokeAll(List.of(prepare, cancel), 15, TimeUnit.SECONDS);
+            assertThat(results.stream().filter(result -> {
+                try { return result.get(); } catch (Exception exception) { throw new AssertionError(exception); }
+            }).count()).isEqualTo(1);
+        }
+        mvc.perform(get("/api/orders/" + id).session(session)).andExpect(status().isOk())
+            .andExpect(jsonPath("version").value(1)).andExpect(jsonPath("history.length()").value(2));
+    }
+
+    private boolean concurrentChange(TransactionTemplate transactions, CountDownLatch loaded, UUID id, OrderStatus next) {
+        try {
+            return Boolean.TRUE.equals(transactions.execute(transaction -> {
+                var order = orderRepository.findById(id).orElseThrow();
+                // Force both transactions to observe the same version before either writes.
+                order.getHistory();
+                loaded.countDown();
+                try {
+                    if (!loaded.await(10, TimeUnit.SECONDS)) throw new AssertionError("Concurrent transaction did not start");
+                } catch (InterruptedException exception) { Thread.currentThread().interrupt(); throw new AssertionError(exception); }
+                order.changeStatus(next, order.getOwnerId(), Instant.now());
+                orderRepository.flush();
+                return true;
+            }));
+        } catch (ObjectOptimisticLockingFailureException | DataIntegrityViolationException conflict) {
+            return false;
+        }
     }
 
     @Test

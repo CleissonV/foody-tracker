@@ -35,6 +35,7 @@ public class SecurityConfig {
                 auth.requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/actuator/health").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll();
                 if (docsEnabled) auth.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
+                else auth.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").denyAll();
                 auth.anyRequest().authenticated();
             })
             .csrf(csrf -> csrf.csrfTokenRepository(csrfTokens))

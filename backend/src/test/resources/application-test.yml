@@ -8,4 +8,5 @@ spring:
 logging:
   level:
     org.hibernate.stat: WARN
+    org.hibernate.engine.internal.StatisticalLoggingSessionEventListener: WARN
     org.springframework: WARN

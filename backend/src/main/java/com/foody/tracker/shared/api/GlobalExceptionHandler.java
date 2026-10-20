@@ -18,6 +18,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -63,6 +66,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     ProblemDetail integrity(Exception exception, HttpServletRequest request) {
         return ProblemResponses.create(HttpStatus.CONFLICT, "DATA_CONFLICT", "Os dados informados conflitam com um registro existente.", request.getRequestURI());
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    ProblemDetail notFound(Exception exception, HttpServletRequest request) {
+        return ProblemResponses.create(HttpStatus.NOT_FOUND, "NOT_FOUND", "Recurso não encontrado.", request.getRequestURI());
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    ProblemDetail methodNotAllowed(Exception exception, HttpServletRequest request) {
+        return ProblemResponses.create(HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED", "Método HTTP não permitido.", request.getRequestURI());
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    ProblemDetail unsupportedMedia(Exception exception, HttpServletRequest request) {
+        return ProblemResponses.create(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE", "Envie o corpo como application/json.", request.getRequestURI());
     }
 
     @ExceptionHandler(Exception.class)
