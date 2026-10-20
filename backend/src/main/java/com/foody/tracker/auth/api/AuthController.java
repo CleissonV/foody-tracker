@@ -2,6 +2,7 @@ package com.foody.tracker.auth.api;
 
 import com.foody.tracker.auth.application.AuthService;
 import com.foody.tracker.auth.application.AuthenticatedUser;
+import com.foody.tracker.auth.application.UserProfile;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -48,14 +49,14 @@ public class AuthController {
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Cadastrar usuário; não autentica automaticamente")
-    UserResponse register(@Valid @RequestBody RegisterRequest request) {
+    UserProfile register(@Valid @RequestBody RegisterRequest request) {
         var user = service.register(request.name(), request.email(), request.password());
-        return new UserResponse(user.getId(), user.getName(), user.getEmail());
+        return UserProfile.from(user);
     }
 
     @PostMapping("/login")
     @Operation(summary = "Autenticar e iniciar sessão em cookie HttpOnly")
-    UserResponse login(@Valid @RequestBody LoginRequest body, HttpServletRequest request, HttpServletResponse response) {
+    UserProfile login(@Valid @RequestBody LoginRequest body, HttpServletRequest request, HttpServletResponse response) {
         var authentication = authenticationManager.authenticate(
             UsernamePasswordAuthenticationToken.unauthenticated(AuthService.normalizeEmail(body.email()), body.password()));
         sessionStrategy.onAuthentication(authentication, request, response);
@@ -63,12 +64,12 @@ public class AuthController {
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
         contexts.saveContext(context, request, response);
-        return UserResponse.from((AuthenticatedUser) authentication.getPrincipal());
+        return service.profile(((AuthenticatedUser) authentication.getPrincipal()).id());
     }
 
     @GetMapping("/me")
     @Operation(summary = "Consultar usuário autenticado")
-    UserResponse me(@AuthenticationPrincipal AuthenticatedUser user) { return UserResponse.from(user); }
+    UserProfile me(@AuthenticationPrincipal AuthenticatedUser user) { return service.profile(user.id()); }
 
     public record RegisterRequest(
         @NotBlank @Size(min = 2, max = 100) String name,
@@ -76,8 +77,5 @@ public class AuthController {
         @NotBlank @Size(min = 8, max = 72) String password) {}
     public record LoginRequest(@NotBlank @Email @Size(max = 254) String email,
                                @NotBlank @Size(max = 72) String password) {}
-    public record UserResponse(UUID id, String name, String email) {
-        static UserResponse from(AuthenticatedUser user) { return new UserResponse(user.id(), user.name(), user.getUsername()); }
-    }
     public record CsrfResponse(String headerName, String token) {}
 }

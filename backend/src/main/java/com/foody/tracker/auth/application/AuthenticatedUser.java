@@ -11,13 +11,16 @@ public class AuthenticatedUser extends User {
     private static final long serialVersionUID = 1L;
     private final UUID id;
     private final String name;
+    private final long credentialsVersion;
 
-    public AuthenticatedUser(UUID id, String name, String email, String passwordHash) {
+    public AuthenticatedUser(UUID id, String name, String email, String passwordHash, long credentialsVersion) {
         super(email, passwordHash, List.of(new SimpleGrantedAuthority("ROLE_USER")));
         this.id = id;
         this.name = name;
+        this.credentialsVersion = credentialsVersion;
     }
 
     public UUID id() { return id; }
     public String name() { return name; }
+    public long credentialsVersion() { return credentialsVersion; }
 }

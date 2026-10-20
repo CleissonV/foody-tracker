@@ -21,6 +21,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -41,7 +43,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
-        ConstraintViolationException.class, HandlerMethodValidationException.class, IllegalArgumentException.class})
+        ConstraintViolationException.class, HandlerMethodValidationException.class, IllegalArgumentException.class, MissingServletRequestPartException.class})
     ProblemDetail invalidInput(Exception exception, HttpServletRequest request) {
         return ProblemResponses.create(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "Requisição inválida. Confira os valores e os tipos dos campos.", request.getRequestURI());
     }
@@ -55,7 +57,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     ProblemDetail optimisticConflict(Exception exception, HttpServletRequest request) {
+        if (request.getRequestURI().startsWith("/api/profile")) {
+            return ProblemResponses.create(HttpStatus.CONFLICT, "PROFILE_CONFLICT", "Seu perfil foi alterado em outra sessão. Recarregue antes de salvar.", request.getRequestURI());
+        }
         return ProblemResponses.create(HttpStatus.CONFLICT, "ORDER_CONFLICT", "O pedido foi alterado em outra sessão. Atualize e tente novamente.", request.getRequestURI());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    ProblemDetail uploadTooLarge(Exception exception, HttpServletRequest request) {
+        return ProblemResponses.create(HttpStatus.PAYLOAD_TOO_LARGE, "AVATAR_TOO_LARGE", "Escolha uma imagem de até 2 MB.", request.getRequestURI());
     }
 
     @ExceptionHandler(InvalidStatusTransition.class)

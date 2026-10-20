@@ -2,6 +2,8 @@ package com.foody.tracker.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foody.tracker.shared.api.ProblemResponses;
+import com.foody.tracker.auth.application.AuthService;
+import com.foody.tracker.auth.infra.SessionVersionFilter;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +22,7 @@ import org.springframework.security.web.authentication.session.CompositeSessionA
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
@@ -28,9 +31,10 @@ import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper mapper,
-            SecurityContextRepository contexts, CsrfTokenRepository csrfTokens,
+            SecurityContextRepository contexts, CsrfTokenRepository csrfTokens, AuthService authService,
             @Value("${app.docs-enabled}") boolean docsEnabled) throws Exception {
         return http
+            .addFilterAfter(new SessionVersionFilter(authService, mapper), SecurityContextHolderFilter.class)
             .authorizeHttpRequests(auth -> {
                 auth.requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/actuator/health").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll();

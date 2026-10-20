@@ -19,5 +19,5 @@ class ArchitectureTest {
 
     @ArchTest
     static final ArchRule application_does_not_depend_on_http_contracts = noClasses().that().resideInAPackage("..application..")
-        .should().dependOnClassesThat().resideInAnyPackage("..auth.api..", "..orders.api..");
+        .should().dependOnClassesThat().resideInAnyPackage("..auth.api..", "..orders.api..", "..profile.api..");
 }
