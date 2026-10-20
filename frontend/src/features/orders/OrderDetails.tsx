@@ -33,7 +33,6 @@ export function OrderDetails({
   const detail = useQuery({
     queryKey: ['order', id],
     queryFn: () => api.order(id),
-    refetchInterval: 10_000,
   });
   const update = useMutation({
     mutationFn: ({ status, version }: { status: Status; version: number }) =>

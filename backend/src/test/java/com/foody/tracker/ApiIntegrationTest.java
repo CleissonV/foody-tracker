@@ -43,6 +43,8 @@ class ApiIntegrationTest {
     @Autowired EntityManagerFactory entityManagerFactory;
     @Autowired OrderRepository orderRepository;
     @Autowired PlatformTransactionManager transactionManager;
+    @Autowired com.foody.tracker.orders.application.OrderUpdates updates;
+    @Autowired org.springframework.context.ApplicationEventPublisher events;
 
     private String email() { return UUID.randomUUID() + "@example.com"; }
     private String body(Object value) throws Exception { return json.writeValueAsString(value); }
@@ -74,6 +76,48 @@ class ApiIntegrationTest {
             "complement":"Casa","neighborhood":"Centro","city":"Bauru","state":"SP","postalCode":"17010-000"},
             "items":[{"name":"Pizza","quantity":2,"unitPrice":29.90}]}
             """;
+    }
+
+    @Test
+    void emitsOnlyCommittedChangesToTheOwner() throws Exception {
+        var session = login();
+        var owner = ((com.foody.tracker.auth.application.AuthenticatedUser)
+            ((org.springframework.security.core.context.SecurityContext) session.getAttribute("SPRING_SECURITY_CONTEXT"))
+                .getAuthentication().getPrincipal()).id();
+        var received = new java.util.ArrayList<com.foody.tracker.orders.application.OrderChanged>();
+        var outsiders = new java.util.ArrayList<com.foody.tracker.orders.application.OrderChanged>();
+        var unsubscribe = updates.subscribe(owner, received::add);
+        var unsubscribeOutsider = updates.subscribe(UUID.randomUUID(), outsiders::add);
+        try {
+            var id = create(session).get("id").asText();
+            assertThat(received).hasSize(1);
+            assertThat(received.getFirst().orderId()).isEqualTo(UUID.fromString(id));
+            mvc.perform(patch("/api/orders/" + id + "/status").session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"EM_PREPARO\",\"expectedVersion\":0}")).andExpect(status().isOk());
+            assertThat(received).hasSize(2);
+            new TransactionTemplate(transactionManager).executeWithoutResult(transaction -> {
+                events.publishEvent(new com.foody.tracker.orders.application.OrderChanged(owner, UUID.randomUUID()));
+                transaction.setRollbackOnly();
+            });
+            assertThat(received).hasSize(2);
+            assertThat(outsiders).isEmpty();
+        } finally { unsubscribe.run(); unsubscribeOutsider.run(); }
+    }
+
+    @Test
+    void streamRequiresAuthenticationAndFlushesReadyEvent() throws Exception {
+        mvc.perform(get("/api/orders/events")).andExpect(status().isUnauthorized());
+        var session = login();
+        var stream = mvc.perform(get("/api/orders/events").session(session))
+            .andExpect(status().isOk()).andExpect(request().asyncStarted())
+            .andExpect(header().string("X-Accel-Buffering", "no")).andReturn();
+        assertThat(stream.getResponse().getContentAsString()).contains("event:ready");
+        mvc.perform(put("/api/profile/password").session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"currentPassword\":\"SenhaForte123!\",\"newPassword\":\"OutraSenha123!\",\"expectedVersion\":0}"))
+            .andExpect(status().isOk());
+        create(session);
+        assertThat(stream.getResponse().getContentAsString()).contains("event:orders-changed").doesNotContain("event:session-expired");
+        stream.getRequest().getAsyncContext().complete();
     }
 
     @Test

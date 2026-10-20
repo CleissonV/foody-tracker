@@ -5,6 +5,7 @@ import com.foody.tracker.shared.api.ProblemResponses;
 import com.foody.tracker.auth.application.AuthService;
 import com.foody.tracker.auth.infra.SessionVersionFilter;
 import java.util.List;
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,7 +37,8 @@ public class SecurityConfig {
         return http
             .addFilterAfter(new SessionVersionFilter(authService, mapper), SecurityContextHolderFilter.class)
             .authorizeHttpRequests(auth -> {
-                auth.requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/actuator/health").permitAll()
+                auth.dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/actuator/health").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll();
                 if (docsEnabled) auth.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
                 else auth.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").denyAll();

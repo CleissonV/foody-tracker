@@ -11,6 +11,7 @@ import PersonOutlineRounded from '@mui/icons-material/PersonOutlineRounded';
 import { api, ApiError, errorMessage } from '../lib/api';
 import type { User } from '../lib/types';
 import { UserAvatar } from './UserAvatar';
+import { OrderSyncContext, useOrderUpdates } from '../lib/orderUpdates';
 
 export type AppView = 'orders' | 'profile';
 
@@ -27,10 +28,10 @@ export function AppShell({
   onNavigate: (view: AppView) => void;
   children: ReactNode;
 }) {
+  const sync = useOrderUpdates(user.id);
   const stats = useQuery({
     queryKey: ['stats'],
     queryFn: api.stats,
-    refetchInterval: view === 'orders' ? 10_000 : false,
   });
   const logout = useMutation({
     mutationFn: api.logout,
@@ -155,7 +156,7 @@ export function AppShell({
             {errorMessage(logout.error)}
           </Alert>
         )}
-        {children}
+        <OrderSyncContext.Provider value={sync}>{children}</OrderSyncContext.Provider>
       </div>
     </div>
   );

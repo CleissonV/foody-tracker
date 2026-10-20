@@ -38,13 +38,15 @@
 
 **Consequência:** o cliente deve enviar a versão que observou e tratar conflito. Não há fila ou lock distribuído. Existe teste de duas transações concorrentes e teste HTTP de tela desatualizada.
 
-## ADR 005 — Polling para atualização do painel
+## ADR 005 — SSE para atualização entre sessões
 
-**Contexto:** o desafio exige listar estados atuais, sem definir streaming ou rastreamento de localização.
+**Contexto:** pedidos novos e mudanças de status devem aparecer automaticamente em outras telas da mesma conta.
 
-**Decisão:** polling em 10 segundos, invalidação imediata após escrita e pausa automática do intervalo em abas não visíveis pelo React Query.
+**Decisão:** SSE autenticado por cookie, uma conexão por aba, eventos de invalidação publicados com `@TransactionalEventListener` após commit. O cliente busca os dados por REST, mantendo filtros, paginação e autorização existentes. Heartbeat a cada 15 s, reconexão automática, recarga após conectar e polling de 10 s somente enquanto o canal está indisponível. O botão de atualização manual foi removido.
 
-**Consequência:** há atraso limitado entre telas e custo proporcional aos clientes ativos. SSE/WebSocket seria introduzido conforme latência e volume medidos. Não há indicador falso de “tempo real”.
+**Alternativas:** polling permanente adiciona atraso e leituras sem mudança. WebSocket seria útil para tráfego bidirecional; esse requisito só precisa de servidor → navegador.
+
+**Consequência:** o canal é efêmero e local à instância. Não é uma fila durável; recarregar no evento `ready` recupera alterações perdidas durante desconexões. Réplicas precisarão distribuir invalidações via broker e compartilhar sessões. Limites de 8 conexões por usuário e 200 por instância evitam crescimento sem limite. O Nginx desativa buffering para este endpoint. Substitui a decisão inicial de polling permanente.
 
 ## ADR 006 — Perfil, foto local e revogação de credenciais
 

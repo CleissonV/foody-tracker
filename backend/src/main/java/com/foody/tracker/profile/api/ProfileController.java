@@ -23,6 +23,7 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.WebUtils;
 
 @RestController
 @RequestMapping("/api/profile")
@@ -41,19 +42,23 @@ public class ProfileController {
     @Operation(summary = "Atualizar nome/e-mail; trocar e-mail exige senha atual")
     UserProfile update(@AuthenticationPrincipal AuthenticatedUser user, @Valid @RequestBody UpdateRequest body,
                        HttpServletRequest request, HttpServletResponse response) {
-        var profile = profiles.update(user.id(), body.name(), body.email(), body.currentPassword(), body.expectedVersion());
-        long expectedCredentials = user.credentialsVersion() + (profile.email().equals(user.getUsername()) ? 0 : 1);
-        refreshSession(user, expectedCredentials, request, response);
-        return profile;
+        synchronized (WebUtils.getSessionMutex(request.getSession())) {
+            var profile = profiles.update(user.id(), body.name(), body.email(), body.currentPassword(), body.expectedVersion());
+            long expectedCredentials = user.credentialsVersion() + (profile.email().equals(user.getUsername()) ? 0 : 1);
+            refreshSession(user, expectedCredentials, request, response);
+            return profile;
+        }
     }
 
     @PutMapping("/password")
     @Operation(summary = "Trocar senha e revogar outras sessões")
     UserProfile password(@AuthenticationPrincipal AuthenticatedUser user, @Valid @RequestBody PasswordRequest body,
                          HttpServletRequest request, HttpServletResponse response) {
-        var profile = profiles.changePassword(user.id(), body.currentPassword(), body.newPassword(), body.expectedVersion());
-        refreshSession(user, user.credentialsVersion() + 1, request, response);
-        return profile;
+        synchronized (WebUtils.getSessionMutex(request.getSession())) {
+            var profile = profiles.changePassword(user.id(), body.currentPassword(), body.newPassword(), body.expectedVersion());
+            refreshSession(user, user.credentialsVersion() + 1, request, response);
+            return profile;
+        }
     }
 
     @PutMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

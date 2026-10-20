@@ -6,7 +6,7 @@
 2. Criar um pedido com dois itens e endereço. Mostrar o total calculado.
 3. Abrir detalhes, iniciar preparo, enviar para entrega e concluir. Mostrar o histórico.
 4. Criar outro pedido e demonstrar a confirmação de cancelamento.
-5. Abrir a mesma conta em duas abas, alterar em uma e explicar o conflito de versão se a outra tentar gravar um estado desatualizado antes do polling.
+5. Abrir a mesma conta em duas sessões, criar/alterar em uma e mostrar a atualização automática da outra via SSE. Explicar que a concorrência otimista ainda protege a janela entre leitura e escrita.
 6. Recarregar a página, filtrar status e sair. Explicar que os dados sobrevivem ao reinício, mas sessões em memória exigem novo login.
 7. Mostrar `git log --oneline`, testes e as decisões documentadas.
 8. Abrir **Meu perfil** pelo avatar, editar o nome e salvar uma foto. Explicar a confirmação de senha para alterar e-mail/senha, o controle de versão e a revogação das outras sessões.
@@ -24,7 +24,7 @@
 | O que impede acesso ao pedido de outro usuário? | Toda consulta/alteração usa o ID do usuário autenticado junto do ID do pedido. |
 | O que impede sobrescrita por outra tela? | `expectedVersion` detecta intenção desatualizada; `@Version` protege a corrida no banco. |
 | Por que histórico na mesma transação? | O status e o registro de mudança não podem divergir se ocorrer falha. |
-| Por que não WebSocket agora? | O enunciado não exige streaming; polling entrega o fluxo. SSE ou WebSocket dependem da necessidade de latência/direção. |
+| Por que SSE? | O servidor só precisa avisar o navegador. SSE usa o cookie existente, reconecta automaticamente e invalida consultas após commit. WebSocket faria sentido para tráfego bidirecional. |
 | Como escalaria? | PostgreSQL, sessões em Redis, métricas, eventos com outbox; separar serviços só quando houver motivo. |
 | Como integrar pagamentos/marketplaces? | Idempotência, autenticação de webhooks, timeouts, retries controlados e processamento assíncrono. |
 | Isso está pronto para produção? | Não: faltam rate limit, TLS operacional, recuperação de conta, observabilidade e banco externo para réplicas. |

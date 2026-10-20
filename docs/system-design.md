@@ -16,6 +16,9 @@ flowchart TD
   Orders --> Domain["Agregado: pedido + itens + histórico"]
   Orders --> Repo["Spring Data JPA"]
   Repo --> OrdersDB["H2: pedidos, itens, histórico"]
+  Orders --> Commit["Evento após commit"]
+  Commit --> SSE["SSE por proprietário"]
+  SSE --> Browser
 ```
 
 Os dois nós H2 representam tabelas no mesmo banco. O monólito tem um processo, um banco e uma unidade de implantação. O Nginx serve arquivos estáticos e encaminha chamadas HTTP. A API inicia vinculada ao loopback por padrão; no Compose, a porta é publicada apenas em `127.0.0.1`.
@@ -109,7 +112,7 @@ stateDiagram-v2
 
 - Senhas com BCrypt, custo 12. O limite de 72 bytes UTF-8 é validado antes do hash.
 - Autenticação pela infraestrutura do Spring Security; mensagens de credenciais inválidas não distinguem usuário desconhecido de senha incorreta.
-- A sessão é persistida explicitamente no `SecurityContextRepository`; o identificador muda no login. Expiração após 30 minutos de inatividade. Polling conta como atividade, portanto uma aba ativa mantém a sessão.
+- A sessão é persistida explicitamente no `SecurityContextRepository`; o identificador muda no login. Expiração após 30 minutos de inatividade HTTP. Reconexões periódicas do SSE contam como atividade; uma aba aberta pode manter a sessão.
 - Cookie HttpOnly, SameSite=Lax, transporte apenas por cookie; em HTTPS, `COOKIE_SECURE=true`. Não há token de autenticação no `localStorage`.
 - Token CSRF obtido por endpoint, guardado em memória e enviado no header em toda escrita, inclusive cadastro e login. Login e logout exigem renovação do token.
 - Cada busca/alteração inclui o proprietário autenticado. IDs de terceiros retornam `404`, reduzindo enumeração e prevenindo IDOR.
@@ -122,18 +125,22 @@ Limitação: autenticação pública não tem rate limit. Antes de exposição p
 
 ## Leitura e atualização da interface
 
-React Query administra cache, invalidação e polling. A listagem retorna um resumo; itens e histórico completos só aparecem no detalhe. `default_batch_fetch_size=50` agrupa a carga de itens necessária para os totais, evitando uma consulta por pedido. Um teste garante no máximo três statements para uma página de oito pedidos. O teste não é um benchmark nem prova um limite universal para qualquer página.
+React Query administra cache e invalidação por eventos SSE. A listagem retorna um resumo; itens e histórico completos só aparecem no detalhe. `default_batch_fetch_size=50` agrupa a carga de itens necessária para os totais, evitando uma consulta por pedido. Um teste garante no máximo três statements para uma página de oito pedidos. O teste não é um benchmark nem prova um limite universal para qualquer página.
 
-Com a página ativa, lista e indicadores geram aproximadamente **0,2 requisição/s por usuário**, sem considerar interações. Um detalhe aberto acrescenta **0,1 requisição/s**. Cem operadores com detalhe aberto poderiam gerar cerca de 30 requisições/s só de polling; estes são cálculos de frequência, não capacidade medida do servidor.
+O navegador mantém um `EventSource` autenticado em `GET /api/orders/events`. Depois do commit de criação ou mudança de status, o servidor envia `orders-changed` apenas às conexões do proprietário. A mensagem contém o ID, não uma cópia do agregado. O cliente invalida lista, indicadores e detalhes ativos e busca o estado autorizado por REST. Uma escrita revertida não publica aviso.
 
-Sessão expirada limpa o cache e retorna ao login. Mutations invalidam lista e indicadores; erros de rede possuem estado recuperável. As duas abas de um mesmo usuário se sincronizam na próxima leitura, não instantaneamente.
+O evento `ready` dispara nova leitura ao conectar/reconectar, cobrindo alterações perdidas antes da inscrição ou enquanto offline. Não há replay, offset durável ou promessa de entrega de cada evento; o objetivo é convergir para o estado atual. Heartbeats de 15 s detectam desconexões e verificam sessão/versão de credenciais; essa checagem também ocorre antes de cada aviso. A conexão tem duração máxima de cinco minutos e o navegador a refaz automaticamente. Logout ou revogação fecham o canal. Durante falhas, a interface informa reconexão e consulta os dados a cada 10 s até recuperar o SSE. Conectada, não faz polling periódico de pedidos.
+
+O registro de conexões é concorrente, em memória, limitado a 8 por conta e 200 por processo; callbacks removem conexões encerradas. O Nginx encaminha o stream sem buffering/cache. Isso atende uma instância. Antes de ampliar réplicas ou clientes, medir custo dos heartbeats, latência e clientes lentos, e introduzir distribuição de eventos e isolamento do envio por cliente. O envio atual é síncrono e não representa uma solução para grande fan-out.
+
+Sessão expirada limpa o cache e retorna ao login. Mutations continuam invalidando as consultas imediatamente na própria tela. Os eventos sincronizam outras abas e sessões da mesma conta.
 
 ## Evolução para maior volume — proposta, não implementada
 
 1. **Medir primeiro:** latência p50/p95/p99, erros, taxa de pedidos, consultas lentas, consumo de conexões e conflitos. Health check já existe; métricas de negócio, tracing e dashboards ainda não.
 2. **Banco externo:** PostgreSQL/Cloud SQL, backups, pool limitado e migrações validadas contra esse banco. A migração atual foi executada no H2; não se afirma portabilidade automática.
 3. **Escalar instâncias:** serviço Java em containers, sessões em Redis via Spring Session e balanceamento. H2 em arquivo não deve ser compartilhado por réplicas.
-4. **Atualizações por evento:** SSE se o único fluxo for servidor → navegador; WebSocket se houver necessidade bidirecional, por exemplo localização de entregador. Autorização por operação e heartbeat permanecem necessários.
+4. **Distribuir atualizações:** manter SSE para servidor → navegador, distribuir invalidações entre instâncias e isolar clientes lentos. WebSocket se houver necessidade bidirecional, por exemplo localização de entregador.
 5. **Notificações confiáveis:** gravar um outbox na mesma transação do status; um worker publica e reprocessa com entrega pelo menos uma vez e deduplicação. Um evento disparado antes do commit pode anunciar um estado que será revertido.
 6. **Integrações:** adaptadores para marketplaces/pagamentos, timeouts, circuit breaker, retries limitados, idempotência e fila de falhas. Webhooks precisam de verificação de autenticidade e proteção contra replay.
 7. **Multioperador:** separar `workspace/organization` de usuário e introduzir associação e papéis, em vez de simplesmente remover o filtro `ownerId`.

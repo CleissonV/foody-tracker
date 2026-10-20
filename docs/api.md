@@ -145,3 +145,14 @@ Falhas de validação também retornam `errors`, mapeando campos a mensagens. Nu
 ## Swagger
 
 No Swagger, execute `/auth/csrf`, copie `token` e informe no botão **Authorize**, campo `csrf`. Cadastre/autentique e, após login, renove o token no Authorize. O navegador mantém o cookie automaticamente. A descrição de CSRF na UI é essencial: informar somente o cookie não autoriza uma escrita.
+
+## Atualizações em tempo real
+
+`GET /api/orders/events` exige sessão válida e retorna `text/event-stream` (`Cache-Control: no-cache, no-store`, sem buffering). Não exige CSRF por ser leitura.
+
+- `ready`: conexão estabelecida; recarregar consultas para recuperar alterações perdidas.
+- `orders-changed`: JSON `{"orderId":"UUID"}`, enviado ao proprietário após commit de criação/status. Buscar estado atual pelos endpoints REST.
+- `heartbeat`: mantém a conexão e verifica autorização a cada 15 s.
+- `session-expired`: credenciais revogadas; encerrar fluxo e autenticar novamente. Sessão inválida também pode encerrar o canal; a próxima requisição retorna 401.
+
+Reconexão sugerida: 3 s, com nova leitura após `ready`. O stream se renova em até 5 min. Não há replay via Last-Event-ID. Limites: 8 conexões/usuário, 200/processo; excesso retorna 429. O transporte é local à instância, sem broker/outbox.

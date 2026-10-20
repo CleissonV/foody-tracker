@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Pagination from '@mui/material/Pagination';
 import Skeleton from '@mui/material/Skeleton';
@@ -19,9 +18,9 @@ import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRou
 import Inventory2Outlined from '@mui/icons-material/Inventory2Outlined';
 import LocalShippingOutlined from '@mui/icons-material/LocalShippingOutlined';
 import ReceiptLongOutlined from '@mui/icons-material/ReceiptLongOutlined';
-import RefreshRounded from '@mui/icons-material/RefreshRounded';
 import RestaurantOutlined from '@mui/icons-material/RestaurantOutlined';
 import { api, errorMessage } from '../../lib/api';
+import { OrderSyncContext } from '../../lib/orderUpdates';
 import type { Status, User } from '../../lib/types';
 import { dateTime, money, shortId, statuses, statusLabels } from '../../lib/types';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -30,6 +29,7 @@ import { CreateOrderDialog } from './CreateOrderDialog';
 import { OrderDetails } from './OrderDetails';
 
 export function OrdersPage({ user }: { user: User }) {
+  const sync = useContext(OrderSyncContext);
   const [filter, setFilter] = useState<Status | undefined>();
   const [page, setPage] = useState(0);
   const [creating, setCreating] = useState(false);
@@ -38,15 +38,11 @@ export function OrdersPage({ user }: { user: User }) {
   const orders = useQuery({
     queryKey: ['orders', { page, filter }],
     queryFn: () => api.orders(page, filter),
-    refetchInterval: 10_000,
   });
-  const stats = useQuery({ queryKey: ['stats'], queryFn: api.stats, refetchInterval: 10_000 });
+  const stats = useQuery({ queryKey: ['stats'], queryFn: api.stats });
   const changeFilter = (status?: Status) => {
     setFilter(status);
     setPage(0);
-  };
-  const refresh = () => {
-    void Promise.all([orders.refetch(), stats.refetch()]);
   };
   const counts = stats.data?.counts;
   const firstName = user.name.split(' ')[0];
@@ -147,13 +143,6 @@ export function OrdersPage({ user }: { user: User }) {
               </h2>
               <p>Acompanhe e atualize cada etapa da entrega.</p>
             </div>
-            <IconButton
-              aria-label="Atualizar pedidos"
-              onClick={refresh}
-              disabled={orders.isFetching || stats.isFetching}
-            >
-              {orders.isFetching ? <CircularProgress size={20} /> : <RefreshRounded />}
-            </IconButton>
           </div>
           <div className="status-tabs" role="group" aria-label="Filtrar por status">
             <button className={!filter ? 'selected' : ''} onClick={() => changeFilter()}>
@@ -318,7 +307,10 @@ export function OrdersPage({ user }: { user: User }) {
         </section>
         <footer className="workspace-footer">
           <span>
-            <span className="sync-dot" /> Atualização automática a cada 10 segundos
+            <span className={sync === 'connected' ? 'sync-dot' : 'sync-dot reconnecting'} />{' '}
+            {sync === 'connected'
+              ? 'Atualizações em tempo real'
+              : 'Reconectando · atualização automática ativa'}
           </span>
           <span>Feito para simplificar o caminho.</span>
         </footer>

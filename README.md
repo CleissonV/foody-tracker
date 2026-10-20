@@ -92,7 +92,7 @@ A migração Flyway `V2__user_profiles.sql` atualiza bancos existentes sem apaga
 - Cada conta possui sua própria operação: **listar todos** significa todos os pedidos do usuário autenticado. Outro usuário recebe `404` ao tentar consultar/alterar um pedido alheio. A API obtém o proprietário da sessão, nunca do JSON enviado pelo cliente.
 - Pedidos iniciam como `RECEBIDO`. Os estados ativos avançam uma etapa por vez; podem ser cancelados antes da entrega. `ENTREGUE` e `CANCELADO` são terminais. Cancelamento em rota foi permitido por não haver restrição no enunciado.
 - Repetir o mesmo status retorna `409`; não gera eventos duplicados. Atualizações exigem `expectedVersion` para detectar telas desatualizadas.
-- A lista usa polling a cada 10 segundos enquanto a aba está ativa. Não há rastreamento GPS, mapa ou WebSocket implementado.
+- Lista, indicadores e detalhes recebem atualizações por SSE após cada criação ou mudança de status confirmada. Outras sessões da mesma conta se sincronizam automaticamente. Reconexões recarregam os dados; durante falhas do canal, há fallback de consulta a cada 10 segundos. Não há rastreamento GPS, mapa ou WebSocket.
 - Preços são em BRL. O servidor calcula totais com `BigDecimal`; preço zero é permitido porque o enunciado não exige precificação. CEP e UF são validados por formato; o endereço não é geocodificado.
 - O cadastro retorna `201`; a interface autentica em seguida pelo endpoint de login.
 

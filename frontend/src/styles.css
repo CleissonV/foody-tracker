@@ -1966,3 +1966,7 @@ a {
     gap: 17px;
   }
 }
+
+.sync-dot.reconnecting {
+  background: #b57518;
+}

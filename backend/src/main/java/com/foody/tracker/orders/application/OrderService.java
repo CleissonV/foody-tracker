@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import com.foody.tracker.orders.application.OrderViews.*;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -24,12 +25,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
     private final OrderRepository orders;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
-    public OrderService(OrderRepository orders, Clock clock) { this.orders = orders; this.clock = clock; }
+    public OrderService(OrderRepository orders, Clock clock, ApplicationEventPublisher events) {
+        this.orders = orders; this.clock = clock; this.events = events;
+    }
 
     @Transactional
     public OrderResponse create(UUID ownerId, String customerName, DeliveryAddress address, List<OrderItem> items) {
         var order = orders.saveAndFlush(new DeliveryOrder(ownerId, customerName, address, items, clock.instant()));
+        events.publishEvent(new OrderChanged(ownerId, order.getId()));
         return OrderResponse.from(order);
     }
 
@@ -48,6 +53,7 @@ public class OrderService {
         }
         order.changeStatus(next, ownerId, clock.instant());
         orders.flush(); // Detect optimistic conflict before mapping the new version.
+        events.publishEvent(new OrderChanged(ownerId, order.getId()));
         return OrderResponse.from(order);
     }
 

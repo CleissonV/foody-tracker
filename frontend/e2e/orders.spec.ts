@@ -85,7 +85,6 @@ test('cancelamento exige confirmação e é terminal', async ({ page }) => {
     },
   });
   expect(created.status()).toBe(201);
-  await page.getByRole('button', { name: 'Atualizar pedidos' }).click();
   await page
     .getByRole('button', { name: 'Ver pedido de João Souza' })
     .filter({ visible: true })
