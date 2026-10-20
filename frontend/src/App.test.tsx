@@ -11,6 +11,7 @@ it('atualiza a tela no login/logout e elimina o cache privado sem perder o obser
   );
   vi.spyOn(api, 'login').mockResolvedValue({
     id: 'user',
+    version: 0,
     name: 'Ana Silva',
     email: 'ana@example.com',
   });

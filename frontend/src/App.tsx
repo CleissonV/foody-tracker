@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
@@ -6,14 +6,28 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { api, ApiError, errorMessage, resetCsrf } from './lib/api';
 import type { User } from './lib/types';
 import { AuthPage } from './features/auth/AuthPage';
+import { AppShell } from './components/AppShell';
+import type { AppView } from './components/AppShell';
 
 const OrdersPage = lazy(() =>
   import('./features/orders/OrdersPage').then((module) => ({ default: module.OrdersPage })),
 );
+const ProfilePage = lazy(() =>
+  import('./features/profile/ProfilePage').then((module) => ({ default: module.ProfilePage })),
+);
+const subscribeNavigation = (listener: () => void) => {
+  window.addEventListener('hashchange', listener);
+  return () => window.removeEventListener('hashchange', listener);
+};
+const currentView = (): AppView => (window.location.hash === '#perfil' ? 'profile' : 'orders');
 
 export function App() {
   const client = useQueryClient();
   const [sessionExpired, setSessionExpired] = useState(false);
+  const view = useSyncExternalStore(subscribeNavigation, currentView);
+  const navigate = (next: AppView) => {
+    window.location.hash = next === 'profile' ? 'perfil' : 'pedidos';
+  };
   const me = useQuery({
     queryKey: ['auth'],
     queryFn: api.me,
@@ -73,15 +87,17 @@ export function App() {
     );
   }
   return me.data ? (
-    <Suspense
-      fallback={
-        <main className="boot-loader">
-          <CircularProgress aria-label="Carregando pedidos" />
-        </main>
-      }
-    >
-      <OrdersPage user={me.data} onLogout={logout} />
-    </Suspense>
+    <AppShell user={me.data} onLogout={logout} view={view} onNavigate={navigate}>
+      <Suspense
+        fallback={
+          <main className="boot-loader">
+            <CircularProgress aria-label="Carregando pedidos" />
+          </main>
+        }
+      >
+        {view === 'profile' ? <ProfilePage user={me.data} /> : <OrdersPage user={me.data} />}
+      </Suspense>
+    </AppShell>
   ) : (
     <AuthPage onLogin={login} sessionExpired={sessionExpired} />
   );

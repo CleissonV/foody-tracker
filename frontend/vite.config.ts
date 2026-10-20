@@ -15,6 +15,8 @@ export default defineConfig({
     proxy: { '/api': { target: 'http://127.0.0.1:8080', changeOrigin: true } },
   },
   test: {
+    maxWorkers: 2,
+    testTimeout: 10_000,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     include: ['src/**/*.test.{ts,tsx}'],

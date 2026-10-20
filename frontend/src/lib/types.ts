@@ -4,6 +4,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  avatarUrl?: string | null;
+  version: number;
 }
 export interface Address {
   street: string;

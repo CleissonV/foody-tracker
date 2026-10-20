@@ -30,7 +30,7 @@ describe('autenticação', () => {
   });
 
   it('cadastra e autentica pelo mesmo fluxo', async () => {
-    const account = { id: '1', name: 'Ana', email: 'ana@example.com' };
+    const account = { id: '1', name: 'Ana', email: 'ana@example.com', version: 0 };
     const register = vi.spyOn(api, 'register').mockResolvedValue(account);
     vi.spyOn(api, 'login').mockResolvedValue(account);
     const onLogin = vi.fn();

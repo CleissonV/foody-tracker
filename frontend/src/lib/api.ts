@@ -42,7 +42,8 @@ export function resetCsrf() {
 
 async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  if (init.body) headers.set('Content-Type', 'application/json');
+  if (init.body && !(init.body instanceof FormData))
+    headers.set('Content-Type', 'application/json');
   if (init.method && !['GET', 'HEAD', 'OPTIONS'].includes(init.method)) {
     const token = await getCsrf();
     headers.set(token.headerName, token.token);
@@ -65,6 +66,34 @@ async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   me: () => request<User>('/auth/me'),
+  updateProfile: async (data: {
+    name: string;
+    email: string;
+    currentPassword?: string;
+    expectedVersion: number;
+  }) => {
+    const user = await request<User>('/profile', { method: 'PATCH', body: JSON.stringify(data) });
+    resetCsrf();
+    return user;
+  },
+  changePassword: async (data: {
+    currentPassword: string;
+    newPassword: string;
+    expectedVersion: number;
+  }) => {
+    const user = await request<User>('/profile/password', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    resetCsrf();
+    return user;
+  },
+  uploadAvatar: (file: File) => {
+    const data = new FormData();
+    data.append('file', file);
+    return request<User>('/profile/avatar', { method: 'PUT', body: data });
+  },
+  removeAvatar: () => request<User>('/profile/avatar', { method: 'DELETE' }),
   register: (data: { name: string; email: string; password: string }) =>
     request<User>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
   login: async (data: { email: string; password: string }) => {
