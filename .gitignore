@@ -5,6 +5,8 @@
 **/coverage/
 **/playwright-report/
 **/test-results/
+.npm-cache/
+*.tsbuildinfo
 **/data/
 *.log
 .env

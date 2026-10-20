@@ -6,7 +6,9 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    proxy: { '/api': { target: 'http://127.0.0.1:8080', changeOrigin: true } },
+    proxy: {
+      '/api': { target: process.env.API_TARGET ?? 'http://127.0.0.1:8080', changeOrigin: true },
+    },
   },
   preview: {
     port: 4173,
@@ -17,5 +19,16 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
     include: ['src/**/*.test.{ts,tsx}'],
     restoreMocks: true,
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('/node_modules/')) return;
+          if (/\/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react';
+          if (id.includes('/@mui/') || id.includes('/@emotion/')) return 'ui';
+        },
+      },
+    },
   },
 });
