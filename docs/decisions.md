@@ -45,3 +45,11 @@
 **Decisão:** polling em 10 segundos, invalidação imediata após escrita e pausa automática do intervalo em abas não visíveis pelo React Query.
 
 **Consequência:** há atraso limitado entre telas e custo proporcional aos clientes ativos. SSE/WebSocket seria introduzido conforme latência e volume medidos. Não há indicador falso de “tempo real”.
+
+## ADR 006 — Perfil, foto local e revogação de credenciais
+
+**Contexto:** permitir ao usuário editar os próprios dados e a foto, sem criar dependências de serviços externos. Uma troca de senha não deve manter outras sessões antigas autorizadas.
+
+**Decisão:** módulo `profile`, concorrência otimista para os dados, confirmação da senha atual em alterações sensíveis e contador de versão de credenciais. Um filtro confere esse contador em cada requisição autenticada. A sessão atual é rotacionada e recebe o principal atualizado; outras sessões são recusadas na próxima chamada. Fotos limitadas são reencodadas e persistidas como BLOB na tabela do usuário.
+
+**Consequência:** banco e volume existentes preservam a imagem; o upload tem validação real e não depende do MIME declarado. O contador adiciona uma consulta escalar por requisição. Não há storage externo ou CDN, confirmação da posse do novo e-mail nem notificações de alteração de conta. O mesmo perfil não pode sobrescrever uma edição concorrente com uma versão antiga.

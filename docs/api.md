@@ -24,6 +24,11 @@ O token devolvido pelo endpoint usa a proteção padrão do Spring Security; nã
 | GET | `/orders/{id}` | 200 | Proprietário |
 | PATCH | `/orders/{id}/status` | 200 | Proprietário, com CSRF |
 | GET | `/orders/stats` | 200 | Autenticado |
+| PATCH | `/profile` | 200 | Autenticado, com CSRF |
+| PUT | `/profile/password` | 200 | Autenticado, com CSRF e senha atual |
+| PUT | `/profile/avatar` | 200 | Autenticado, multipart com CSRF |
+| GET | `/profile/avatar` | 200, PNG | Autenticado; sempre a própria foto |
+| DELETE | `/profile/avatar` | 200 | Autenticado, com CSRF |
 
 Cadastro:
 
@@ -38,6 +43,30 @@ Login:
 ```
 
 E-mails são normalizados para minúsculas. Senha de cadastro: 8–72 caracteres, respeitando também o máximo de 72 bytes UTF-8 do BCrypt.
+
+## Perfil
+
+`GET /auth/me`, login, cadastro e alterações de perfil retornam `id`, `name`, `email`, `avatarUrl` (ou `null`) e `version`. Dados de `/auth/me` são consultados no banco; não dependem do nome/e-mail armazenado no principal da sessão.
+
+`PATCH /profile`:
+
+```json
+{"name":"Ana Santos","email":"ana@example.com","expectedVersion":0}
+```
+
+Se o e-mail mudar, incluir `currentPassword`. `PUT /profile/password`:
+
+```json
+{"currentPassword":"SenhaForte123!","newPassword":"NovaSenha123!","expectedVersion":1}
+```
+
+Após atualizar os dados ou a senha, obter novo CSRF: a sessão atual é rotacionada. Alterar e-mail ou senha incrementa a versão de credenciais; outras sessões recebem `401 SESSION_REVOKED` na próxima chamada. A senha nova deve ser diferente da atual. A API não confirma posse do novo e-mail por mensagem de verificação.
+
+`PUT /profile/avatar`: `multipart/form-data`, campo `file`. Não definir manualmente o `Content-Type` no navegador: o `FormData` fornece o boundary. Enviar CSRF no header, como nas outras escritas. Arquivos maiores que 2 MB retornam `413`; conteúdo incompatível com PNG/JPEG retorna `415`. Dimensões máximas: 4096 px por lado e 8 milhões de pixels. O arquivo é reencodado em PNG quadrado de 256 px. O nome original e os metadados não são armazenados.
+
+`GET /profile/avatar` retorna somente a imagem do usuário autenticado; não aceita ID de outro usuário. Sem imagem, retorna `404 AVATAR_NOT_FOUND`. `DELETE /profile/avatar` retorna o perfil com `avatarUrl: null`. A URL muda a cada troca para evitar uma imagem antiga na interface; as respostas continuam sem cache público.
+
+Erros adicionais: `400 INVALID_CURRENT_PASSWORD`, `400 PASSWORD_UNCHANGED`, `409 PROFILE_CONFLICT` e `409 EMAIL_ALREADY_EXISTS`. O front deve usar a versão retornada por cada alteração, inclusive upload/remoção de foto.
 
 ## Criar pedido
 

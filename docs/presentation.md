@@ -9,6 +9,7 @@
 5. Abrir a mesma conta em duas abas, alterar em uma e explicar o conflito de versão se a outra tentar gravar um estado desatualizado antes do polling.
 6. Recarregar a página, filtrar status e sair. Explicar que os dados sobrevivem ao reinício, mas sessões em memória exigem novo login.
 7. Mostrar `git log --oneline`, testes e as decisões documentadas.
+8. Abrir **Meu perfil** pelo avatar, editar o nome e salvar uma foto. Explicar a confirmação de senha para alterar e-mail/senha, o controle de versão e a revogação das outras sessões.
 
 ## Explicação de arquitetura
 

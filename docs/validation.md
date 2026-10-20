@@ -4,9 +4,9 @@ Validação realizada em **20/10/2026**, no Windows, com JDK 21 e Node.js 24. Os
 
 | Verificação | Resultado |
 | --- | --- |
-| `mvnw clean verify` | 47 testes aprovados: 33 de domínio, 11 de integração e 3 regras de arquitetura |
-| `npm test` | 9 testes aprovados em quatro arquivos |
-| `npm run test:e2e` | 4 cenários aprovados: dois em desktop e dois com viewport móvel |
+| `mvnw clean verify` | 54 testes aprovados: 33 de domínio, 18 de integração e 3 regras de arquitetura |
+| `npm test` | 13 testes aprovados em cinco arquivos |
+| `npm run test:e2e` | 6 cenários aprovados: três em desktop e três com viewport móvel |
 | `npm run build` | TypeScript e bundle de produção aprovados, sem alerta de chunk circular ou tamanho |
 | `npm run lint` | Aprovado com zero warnings |
 | `npm run format:check` | Aprovado |
@@ -14,9 +14,12 @@ Validação realizada em **20/10/2026**, no Windows, com JDK 21 e Node.js 24. Os
 | Persistência em arquivo | Oito pedidos com os mesmos IDs após encerrar e reiniciar a API; login também preservado no banco |
 | Bundle de produção | Login e painel exercitados no Vite Preview, sem exceções JavaScript observadas |
 | Responsividade | Interface inspecionada em 1440 px e 393 px; sem overflow horizontal da página móvel |
+| Perfil e foto | Edição de nome/e-mail, upload, recorte, remoção de foto, recarga e troca de senha exercitados por HTTP real nos dois viewports |
+| Revogação de sessão | Trocas de e-mail/senha mantêm a sessão atual e bloqueiam outras sessões na próxima requisição |
+| Migração de perfil | V2 aplicada ao banco existente; oito pedidos preservados |
 | Compose | Configuração aceita pelo parser do Docker Compose; tags das quatro imagens encontradas no registry |
 
-Total: **60 testes automatizados aprovados**. JaCoCo registrou **260/270 linhas cobertas (96,3%)** e **38/50 branches (76%)** no back-end, incluindo contratos e configuração. O relatório é gerado por execução; os percentuais não são uma afirmação de ausência de defeitos.
+Total: **73 testes automatizados aprovados**. JaCoCo registrou **386/402 linhas cobertas (96,0%)** e **93/120 branches (77,5%)** no back-end, incluindo contratos e configuração. O relatório é gerado por execução; os percentuais não são uma afirmação de ausência de defeitos.
 
 ## Fluxo comprovado
 

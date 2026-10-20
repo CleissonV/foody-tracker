@@ -74,6 +74,19 @@ Conta local: **demo@foody.local** · Senha: **FoodyDemo123!**. O script cria oit
 
 Complementos: indicadores reais por status, layout responsivo, estados de carregamento/erro/vazio, documentação OpenAPI, testes de domínio/integração/arquitetura/UI/E2E, JaCoCo, Docker e CI.
 
+### Meu perfil
+
+Acesse **Meu perfil** no menu ou clique no avatar do cabeçalho. Link direto: `http://127.0.0.1:5173/#perfil`.
+
+- Editar nome e e-mail. A troca do e-mail exige a senha atual e respeita a unicidade da conta.
+- Trocar a senha com confirmação da senha atual e repetição da nova senha.
+- Escolher foto com prévia, confirmar o envio ou remover a imagem atual. PNG/JPEG de até 2 MB; o servidor valida o conteúdo real, limita dimensões, recorta ao centro e reencoda em PNG 256×256, sem os metadados originais.
+- Nome e foto atualizados aparecem no cabeçalho e no menu. A imagem é persistida no mesmo banco, sem dependência de armazenamento externo.
+- Alterar e-mail ou senha rotaciona a sessão atual e revoga outras sessões na próxima requisição. O usuário permanece conectado na sessão que confirmou a alteração.
+- Atualizações de dados e senha usam a versão do perfil para detectar alterações concorrentes. Os formulários preservam rascunhos ao trocar a foto.
+
+A migração Flyway `V2__user_profiles.sql` atualiza bancos existentes sem apagar usuários ou pedidos. As fotos fazem parte do arquivo/volume H2 e dos seus backups. Não são incluídas no código ou no ZIP.
+
 ### Regras assumidas
 
 - Cada conta possui sua própria operação: **listar todos** significa todos os pedidos do usuário autenticado. Outro usuário recebe `404` ao tentar consultar/alterar um pedido alheio. A API obtém o proprietário da sessão, nunca do JSON enviado pelo cliente.

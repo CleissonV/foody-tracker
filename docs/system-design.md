@@ -60,6 +60,8 @@ erDiagram
 
 O endereço é um snapshot embutido no pedido. Alterar um endereço futuro não muda uma entrega passada. O valor total é derivado dos itens, evitando duas fontes persistidas para o mesmo valor. Valores monetários usam `NUMERIC`/`BigDecimal`. Datas são instantes UTC; a interface usa o fuso do navegador.
 
+O módulo `profile` administra dados pessoais, credenciais e foto. `app_users` recebeu `version` (concorrência), `credentials_version` (revogação de sessões), `avatar_version` e `avatar_data` (BLOB). O perfil usa controle otimista para evitar sobrescrever uma edição antiga; fotos são redimensionadas para 256×256 antes de persistir, mantendo o BLOB pequeno. Em maior escala, a imagem poderia ir para storage privado com URL autorizada; isso não é necessário no ambiente embarcado.
+
 Índices cobrem proprietário + criação, proprietário + status e associações de itens/histórico. A paginação ordena por `createdAt DESC, id DESC`, evitando ordem ambígua para instantes iguais. Offset pagination é suficiente ao tamanho do exercício; novas inserções podem deslocar páginas. Grandes volumes exigiriam cursor composto e ajuste de índices pelo plano real da consulta.
 
 ## Consistência e concorrência
@@ -113,6 +115,8 @@ stateDiagram-v2
 - Cada busca/alteração inclui o proprietário autenticado. IDs de terceiros retornam `404`, reduzindo enumeração e prevenindo IDOR.
 - Erros usam `application/problem+json` e não devolvem stack trace ou hash de senha. O console H2 permanece desativado. Swagger pode ser bloqueado por configuração.
 - Nginx adiciona CSP e headers de segurança. Os assets da interface são locais, sem carregamento de analytics ou scripts do site de referência.
+- A troca de e-mail e senha exige a senha atual. Cada requisição autenticada consulta a versão de credenciais em uma projeção escalar do banco; sessões antigas são invalidadas após uma troca. A sessão que confirmou a operação é renovada com o principal atualizado. Isso acrescenta uma consulta por requisição autenticada; em uma implantação distribuída, a decisão de cache/revogação precisa respeitar a janela de segurança desejada.
+- O upload de foto verifica conteúdo PNG/JPEG, tamanho e dimensões antes da decodificação completa; recorta e reencoda a imagem, eliminando os metadados fornecidos. SVGs e arquivos disfarçados são rejeitados. A foto é privada à conta e herda a proteção da sessão.
 
 Limitação: autenticação pública não tem rate limit. Antes de exposição pública, adicionar limite de tentativas por IP/conta, respostas adequadas a abuso e TLS no gateway. A ausência é deliberadamente declarada, não coberta pelo rótulo de “acesso seguro”.
 
