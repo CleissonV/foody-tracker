@@ -5,8 +5,9 @@ Validação realizada em **20/10/2026**, no Windows, com JDK 21 e Node.js 24. Os
 | Verificação | Resultado |
 | --- | --- |
 | `mvnw verify` | 56 testes aprovados: 33 de domínio, 20 de integração e 3 regras de arquitetura |
-| `npm test` | 16 testes aprovados em seis arquivos |
-| `npm run test:e2e` | 8 cenários aprovados: quatro em desktop e quatro com viewport móvel |
+| `npm test` | 27 testes aprovados em oito arquivos |
+| E2E de endereço e pedidos | 6 cenários aprovados na alteração de CEP: três em desktop e três com viewport móvel |
+| E2E de perfil e SSE | 4 cenários aprovados na revisão anterior; componentes desses fluxos não foram alterados nesta entrega |
 | `npm run build` | TypeScript e bundle de produção aprovados, sem alerta de chunk circular ou tamanho |
 | `npm run lint` | Aprovado com zero warnings |
 | `npm run format:check` | Aprovado |
@@ -19,10 +20,11 @@ Validação realizada em **20/10/2026**, no Windows, com JDK 21 e Node.js 24. Os
 | SSE entre sessões | Criação e status enviados automaticamente a outra sessão em menos de 5 s nos testes, sem refresh manual; detalhes também atualizados |
 | Reconexão | Perda de rede simulada, criação durante desconexão e recuperação da lista ao reconectar, em desktop e viewport móvel |
 | Eventos transacionais | Commit publica, rollback não publica; inscrição de outro proprietário não recebe avisos |
+| Endereço por CEP | API ViaCEP real consultada separadamente; testes simulam o provedor para validar máscara, mudança de UF, CEP inexistente, cancelamento, edição manual e persistência do endereço no pedido |
 | Migração de perfil | V2 aplicada ao banco existente; oito pedidos preservados |
 | Compose | Configuração aceita pelo parser do Docker Compose; tags das quatro imagens encontradas no registry |
 
-Total: **80 testes automatizados aprovados**. JaCoCo registrou **440/465 linhas cobertas (94,6%)** e **104/140 branches (74,3%)** no back-end, incluindo contratos e configuração. O relatório é gerado por execução; os percentuais não são uma afirmação de ausência de defeitos.
+Na alteração de CEP, passaram **27 testes do front-end e 6 cenários de navegador**. Os **56 testes Java** e os demais cenários de perfil/SSE foram aprovados na revisão anterior; não foram repetidos porque não houve alteração nessas funcionalidades. JaCoCo registrou **440/465 linhas cobertas (94,6%)** e **104/140 branches (74,3%)** no back-end, incluindo contratos e configuração. O relatório é gerado por execução; os percentuais não são uma afirmação de ausência de defeitos.
 
 ## Fluxo comprovado
 

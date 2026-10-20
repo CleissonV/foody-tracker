@@ -7,7 +7,6 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
-import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import AddRounded from '@mui/icons-material/AddRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
@@ -15,36 +14,8 @@ import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import { api, errorMessage } from '../../lib/api';
 import type { CreateOrder } from '../../lib/types';
 import { money } from '../../lib/types';
+import { DeliveryAddressFields } from './DeliveryAddressFields';
 
-const states = [
-  'AC',
-  'AL',
-  'AP',
-  'AM',
-  'BA',
-  'CE',
-  'DF',
-  'ES',
-  'GO',
-  'MA',
-  'MT',
-  'MS',
-  'MG',
-  'PA',
-  'PB',
-  'PR',
-  'PE',
-  'PI',
-  'RJ',
-  'RN',
-  'RS',
-  'RO',
-  'RR',
-  'SC',
-  'SP',
-  'SE',
-  'TO',
-];
 const required = (maxLength: number) => ({
   required: 'Campo obrigatório.',
   maxLength: { value: maxLength, message: `Use até ${maxLength} caracteres.` },
@@ -60,12 +31,7 @@ export function CreateOrderDialog({
   onCreated: (id: string) => void;
 }) {
   const client = useQueryClient();
-  const {
-    control,
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<CreateOrder>({
+  const form = useForm<CreateOrder>({
     defaultValues: {
       customerName: '',
       deliveryAddress: {
@@ -80,6 +46,12 @@ export function CreateOrderDialog({
       items: [{ name: '', quantity: 1, unitPrice: 0 }],
     },
   });
+  const {
+    control,
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = form;
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const items = useWatch({ control, name: 'items' });
   const totalCents = items.reduce(
@@ -201,62 +173,7 @@ export function CreateOrderDialog({
           <div className="form-section-title">
             <span>03</span> Onde vamos entregar?
           </div>
-          <div className="address-fields">
-            <TextField
-              label="Rua / Avenida"
-              {...register('deliveryAddress.street', required(150))}
-              error={!!errors.deliveryAddress?.street}
-              helperText={errors.deliveryAddress?.street?.message}
-            />
-            <TextField
-              label="Número"
-              {...register('deliveryAddress.number', required(20))}
-              error={!!errors.deliveryAddress?.number}
-              helperText={errors.deliveryAddress?.number?.message}
-            />
-            <TextField
-              label="Complemento (opcional)"
-              {...register('deliveryAddress.complement', {
-                maxLength: { value: 100, message: 'Use até 100 caracteres.' },
-              })}
-              error={!!errors.deliveryAddress?.complement}
-              helperText={errors.deliveryAddress?.complement?.message}
-            />
-            <TextField
-              label="Bairro"
-              {...register('deliveryAddress.neighborhood', required(100))}
-              error={!!errors.deliveryAddress?.neighborhood}
-              helperText={errors.deliveryAddress?.neighborhood?.message}
-            />
-            <TextField
-              label="Cidade"
-              {...register('deliveryAddress.city', required(100))}
-              error={!!errors.deliveryAddress?.city}
-              helperText={errors.deliveryAddress?.city?.message}
-            />
-            <TextField
-              label="UF"
-              select
-              defaultValue="SP"
-              {...register('deliveryAddress.state', { required: true })}
-            >
-              {states.map((state) => (
-                <MenuItem key={state} value={state}>
-                  {state}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              label="CEP"
-              placeholder="00000-000"
-              {...register('deliveryAddress.postalCode', {
-                required: 'Informe o CEP.',
-                pattern: { value: /^\d{5}-?\d{3}$/, message: 'Use 00000-000 ou 00000000.' },
-              })}
-              error={!!errors.deliveryAddress?.postalCode}
-              helperText={errors.deliveryAddress?.postalCode?.message}
-            />
-          </div>
+          <DeliveryAddressFields form={form} disabled={create.isPending} />
         </DialogContent>
         <DialogActions className="create-actions">
           <div className="order-form-total">

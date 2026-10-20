@@ -2,7 +2,7 @@
 
 ## Objetivo e fronteira
 
-Receber pedidos, consultar suas etapas e registrar mudanças de status com autenticação. Uma conta representa uma operação isolada. Não há integrações externas, rastreamento de localização ou mensageria em execução.
+Receber pedidos, consultar suas etapas e registrar mudanças de status com autenticação. Uma conta representa uma operação isolada. O navegador consulta o ViaCEP para auxiliar o preenchimento do endereço. Não há rastreamento de localização ou mensageria externa em execução.
 
 ## Arquitetura implementada
 

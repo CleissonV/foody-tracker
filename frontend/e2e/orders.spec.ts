@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+  await page.route('https://viacep.com.br/ws/**', (route) =>
+    route.fulfill({
+      json: { logradouro: 'Rua das Flores', bairro: 'Centro', localidade: 'Bauru', uf: 'SP' },
+    }),
+  );
+});
+
 test('cadastro, criação, entrega, persistência de sessão e logout', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));

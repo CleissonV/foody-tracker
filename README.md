@@ -87,13 +87,19 @@ Acesse **Meu perfil** no menu ou clique no avatar do cabeçalho. Link direto: `h
 
 A migração Flyway `V2__user_profiles.sql` atualiza bancos existentes sem apagar usuários ou pedidos. As fotos fazem parte do arquivo/volume H2 e dos seus backups. Não são incluídas no código ou no ZIP.
 
+### Busca de endereço por CEP
+
+O CEP aparece primeiro no endereço. A consulta usa a API pública [ViaCEP](https://viacep.com.br/) diretamente pelo navegador, sem enviar cookies da aplicação. Há máscara 00000-000, indicador de consulta, timeout de 5 s e cancelamento ao mudar o CEP ou fechar o formulário. Respostas antigas não sobrescrevem o CEP atual nem edições feitas durante a consulta.
+
+Rua, bairro, cidade e UF continuam editáveis. CEP inexistente, indisponibilidade ou CEP genérico de município permitem completar o endereço manualmente. Ao trocar o CEP, valores anteriores preenchidos automaticamente são limpos; número, complemento e correções manuais são preservados. O Nginx permite somente o domínio do ViaCEP como conexão externa adicional na CSP. A consulta não verifica o endereço de entrega nem substitui a revisão do usuário.
+
 ### Regras assumidas
 
 - Cada conta possui sua própria operação: **listar todos** significa todos os pedidos do usuário autenticado. Outro usuário recebe `404` ao tentar consultar/alterar um pedido alheio. A API obtém o proprietário da sessão, nunca do JSON enviado pelo cliente.
 - Pedidos iniciam como `RECEBIDO`. Os estados ativos avançam uma etapa por vez; podem ser cancelados antes da entrega. `ENTREGUE` e `CANCELADO` são terminais. Cancelamento em rota foi permitido por não haver restrição no enunciado.
 - Repetir o mesmo status retorna `409`; não gera eventos duplicados. Atualizações exigem `expectedVersion` para detectar telas desatualizadas.
 - Lista, indicadores e detalhes recebem atualizações por SSE após cada criação ou mudança de status confirmada. Outras sessões da mesma conta se sincronizam automaticamente. Reconexões recarregam os dados; durante falhas do canal, há fallback de consulta a cada 10 segundos. Não há rastreamento GPS, mapa ou WebSocket.
-- Preços são em BRL. O servidor calcula totais com `BigDecimal`; preço zero é permitido porque o enunciado não exige precificação. CEP e UF são validados por formato; o endereço não é geocodificado.
+- Preços são em BRL. O servidor calcula totais com `BigDecimal`; preço zero é permitido porque o enunciado não exige precificação. O formulário consulta o ViaCEP ao completar 8 dígitos e preenche rua, bairro, cidade e UF; número/complemento permanecem manuais. A API Java valida formato e campos, mas não consulta o provedor nem exige que a busca tenha sucesso. O endereço não é geocodificado.
 - O cadastro retorna `201`; a interface autentica em seguida pelo endpoint de login.
 
 ## Arquitetura e system design

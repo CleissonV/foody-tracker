@@ -851,19 +851,19 @@ a {
 .address-fields > .MuiFormControl-root {
   grid-column: span 3;
 }
-.address-fields > .MuiFormControl-root:first-child {
+.address-fields > .address-postal-code {
+  grid-column: 1 / -1;
+}
+.address-fields > .address-street {
   grid-column: span 4;
 }
-.address-fields > .MuiFormControl-root:nth-child(2) {
+.address-fields > .address-number {
   grid-column: span 2;
 }
-.address-fields > .MuiFormControl-root:nth-child(5) {
-  grid-column: span 3;
+.address-fields > .address-city {
+  grid-column: span 4;
 }
-.address-fields > .MuiFormControl-root:nth-child(6) {
-  grid-column: span 1;
-}
-.address-fields > .MuiFormControl-root:nth-child(7) {
+.address-fields > .address-state {
   grid-column: span 2;
 }
 .create-actions {
@@ -1444,15 +1444,6 @@ a {
   }
   .address-fields {
     gap: 20px 10px;
-  }
-  .address-fields > .MuiFormControl-root:nth-child(5) {
-    grid-column: span 4;
-  }
-  .address-fields > .MuiFormControl-root:nth-child(6) {
-    grid-column: span 2;
-  }
-  .address-fields > .MuiFormControl-root:nth-child(7) {
-    grid-column: span 6;
   }
   .create-actions {
     padding: 15px 18px !important;

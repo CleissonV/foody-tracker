@@ -55,3 +55,11 @@
 **Decisão:** módulo `profile`, concorrência otimista para os dados, confirmação da senha atual em alterações sensíveis e contador de versão de credenciais. Um filtro confere esse contador em cada requisição autenticada. A sessão atual é rotacionada e recebe o principal atualizado; outras sessões são recusadas na próxima chamada. Fotos limitadas são reencodadas e persistidas como BLOB na tabela do usuário.
 
 **Consequência:** banco e volume existentes preservam a imagem; o upload tem validação real e não depende do MIME declarado. O contador adiciona uma consulta escalar por requisição. Não há storage externo ou CDN, confirmação da posse do novo e-mail nem notificações de alteração de conta. O mesmo perfil não pode sobrescrever uma edição concorrente com uma versão antiga.
+
+## ADR 007 — Consulta de CEP opcional no navegador
+
+**Contexto:** reduzir digitação ao criar um pedido, preservando a possibilidade de corrigir endereços e trabalhar quando o provedor estiver indisponível.
+
+**Decisão:** cliente ViaCEP isolado em `lib/postalCode.ts`, chamado pelo componente de endereço ao completar oito dígitos. O provedor permite CORS e não exige segredo. A consulta envia só o CEP; não inclui cookies nem referrer da aplicação. Timeout de 5 s, AbortController, checagem da resposta e proteção contra respostas antigas. A CSP do Nginx libera apenas o host HTTPS necessário.
+
+**Consequência:** não é preciso adicionar um proxy no servidor para essa leitura pública. A busca depende da rede do navegador e do serviço externo; falhas têm preenchimento manual. Rua/bairro podem vir vazios em CEPs genéricos. Número e complemento são informados pelo usuário. O back-end continua validando o pedido e não confia na consulta como comprovação de endereço. Testes automatizados simulam o provedor; uma consulta real foi conferida separadamente.
