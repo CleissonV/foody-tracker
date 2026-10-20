@@ -1,0 +1,16 @@
+# Runtime and build artifacts
+**/target/
+**/node_modules/
+**/dist/
+**/coverage/
+**/playwright-report/
+**/test-results/
+**/data/
+*.log
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
