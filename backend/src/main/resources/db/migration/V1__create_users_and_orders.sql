@@ -45,7 +45,9 @@ CREATE TABLE order_status_history (
     status VARCHAR(30) NOT NULL,
     changed_at TIMESTAMP WITH TIME ZONE NOT NULL,
     changed_by UUID NOT NULL,
+    sequence_number INTEGER NOT NULL,
     CONSTRAINT fk_history_order FOREIGN KEY (order_id) REFERENCES delivery_orders(id),
-    CONSTRAINT fk_history_actor FOREIGN KEY (changed_by) REFERENCES app_users(id)
+    CONSTRAINT fk_history_actor FOREIGN KEY (changed_by) REFERENCES app_users(id),
+    CONSTRAINT uk_history_sequence UNIQUE (order_id, sequence_number)
 );
 CREATE INDEX idx_history_order ON order_status_history(order_id, changed_at);
