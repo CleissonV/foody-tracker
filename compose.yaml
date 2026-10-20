@@ -1,0 +1,22 @@
+services:
+  api:
+    build: ./backend
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+      DATABASE_URL: jdbc:h2:file:/app/data/foody;DB_CLOSE_ON_EXIT=FALSE
+      COOKIE_SECURE: "false"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - foody-data:/app/data
+    restart: unless-stopped
+  web:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:5173:8080"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  foody-data:
