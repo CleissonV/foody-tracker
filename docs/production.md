@@ -1,6 +1,6 @@
 # Variante de produção — PostgreSQL e Vercel Services
 
-A branch `main` permanece no commit `a4aaa514d5bf1e133d3f4969766f4603e463c7c4`, com H2 em arquivo e os comandos originais para avaliação. As adaptações estão somente em `deploy/vercel-postgres`. Não é necessário PostgreSQL para testar a entrega na branch padrão.
+O código de avaliação da branch `main` mantém a implementação H2 original do commit `a4aaa514d5bf1e133d3f4969766f4603e463c7c4`; atualizações posteriores de documentação não alteram o backend ou os comandos de execução local. As adaptações estão somente em `deploy/vercel-postgres`. Não é necessário PostgreSQL para testar a entrega na branch padrão.
 
 ## Configuração
 
