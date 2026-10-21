@@ -40,7 +40,7 @@ Credenciais, arquivos .env, artefatos de build e dados locais são excluídos do
 
 ## Validação da publicação — 21/10/2026
 
-- Produção: https://foody-tracker-lume-agencia.vercel.app/
+- Produção: https://foody-mini-tracker.vercel.app/
 - Revisão de aplicação publicada: `472e5ffd5dd7c4fcc6e6c97248a9670bc85012c2`.
 - Deployment: `dpl_514w2nWawX18wyLqZ8NHhBQLTB1G`, promovido ao domínio definitivo.
 - 60 testes Java e 12 cenários E2E desktop/mobile aprovados.
