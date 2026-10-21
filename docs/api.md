@@ -156,3 +156,11 @@ No Swagger, execute `/auth/csrf`, copie `token` e informe no botão **Authorize*
 - `session-expired`: credenciais revogadas; encerrar fluxo e autenticar novamente. Sessão inválida também pode encerrar o canal; a próxima requisição retorna 401.
 
 Reconexão sugerida: 3 s, com nova leitura após `ready`. O stream se renova em até 5 min. Não há replay via Last-Event-ID. Limites: 8 conexões/usuário, 200/processo; excesso retorna 429. O transporte é local à instância, sem broker/outbox.
+
+## Busca de pedidos por ID
+
+`GET /api/orders?orderId=%23ABCD1234&status=RECEBIDO&page=0&size=12`
+
+O parâmetro opcional `orderId` aceita o UUID completo ou um prefixo do ID exibido. O `#` inicial e hífens são ignorados, com comparação sem diferenciar maiúsculas/minúsculas. Limite de 37 caracteres no parâmetro; após normalizar, são permitidos de 1 a 32 caracteres hexadecimais. Vazio mantém a listagem normal. Formato inválido retorna 400 (`INVALID_ORDER_ID` ou erro de validação para tamanho excedido).
+
+Filtro executado no banco antes da paginação, sempre restringindo ao proprietário autenticado e combinado por AND com o status. Nenhuma correspondência retorna 200 com página vazia, inclusive para IDs de outras contas. Indicadores não são filtrados pela busca.

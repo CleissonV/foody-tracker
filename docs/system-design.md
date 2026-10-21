@@ -65,7 +65,7 @@ O endereço é um snapshot embutido no pedido. Alterar um endereço futuro não 
 
 O módulo `profile` administra dados pessoais, credenciais e foto. `app_users` recebeu `version` (concorrência), `credentials_version` (revogação de sessões), `avatar_version` e `avatar_data` (BLOB). O perfil usa controle otimista para evitar sobrescrever uma edição antiga; fotos são redimensionadas para 256×256 antes de persistir, mantendo o BLOB pequeno. Em maior escala, a imagem poderia ir para storage privado com URL autorizada; isso não é necessário no ambiente embarcado.
 
-Índices cobrem proprietário + criação, proprietário + status e associações de itens/histórico. A paginação ordena por `createdAt DESC, id DESC`, evitando ordem ambígua para instantes iguais. Offset pagination é suficiente ao tamanho do exercício; novas inserções podem deslocar páginas. Grandes volumes exigiriam cursor composto e ajuste de índices pelo plano real da consulta.
+Índices cobrem proprietário + criação, proprietário + status e associações de itens/histórico. A paginação ordena por `createdAt DESC, id DESC`, evitando ordem ambígua para instantes iguais. A busca por prefixo de ID normaliza UUIDs na consulta e combina proprietário/status antes de paginar. Esse cast/replace é simples no H2 do exercício, mas não aproveita um índice convencional de UUID para prefixos; em maior volume, medir e criar uma coluna/índice adequado ou separar a busca exata por UUID. Offset pagination é suficiente ao tamanho do exercício; novas inserções podem deslocar páginas. Grandes volumes exigiriam cursor composto e ajuste de índices pelo plano real da consulta.
 
 ## Consistência e concorrência
 

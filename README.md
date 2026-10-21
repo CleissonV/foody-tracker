@@ -67,7 +67,7 @@ Conta local: **demo@foody.local** · Senha: **FoodyDemo123!**. O script cria oit
 | Acesso autenticado | Spring Security, sessão HttpOnly, proteção CSRF e logout |
 | Criar pedido | Cliente, endereço estruturado e 1–50 itens com quantidade e preço |
 | Atualizar status | Máquina de estados, histórico transacional e proteção contra concorrência |
-| Listar e buscar por ID | Paginação, ordenação estável e filtro por status |
+| Listar e buscar por ID | Paginação, ordenação estável, filtro por status e busca por ID |
 | Persistência | H2 em arquivo, migração Flyway, Hibernate em `validate` |
 | React | Cadastro, login, painel, criação, detalhes, atualização e cancelamento |
 | Git | Commits separados por entrega; repositório local incluído |
@@ -86,6 +86,10 @@ Acesse **Meu perfil** no menu ou clique no avatar do cabeçalho. Link direto: `h
 - Atualizações de dados e senha usam a versão do perfil para detectar alterações concorrentes. Os formulários preservam rascunhos ao trocar a foto.
 
 A migração Flyway `V2__user_profiles.sql` atualiza bancos existentes sem apagar usuários ou pedidos. As fotos fazem parte do arquivo/volume H2 e dos seus backups. Não são incluídas no código ou no ZIP.
+
+### Buscar pedidos por ID
+
+Use **Buscar pedido por ID** no cabeçalho da tabela. Aceita o UUID completo ou o início do código exibido, com ou sem `#`, sem distinguir maiúsculas/minúsculas. A consulta é feita no servidor após 300 ms sem digitação, cobre todas as páginas e combina com o status selecionado. Alterar a busca volta à primeira página; o botão de limpar mantém o filtro de status. Indicadores continuam mostrando os totais da operação.
 
 ### Busca de endereço por CEP
 

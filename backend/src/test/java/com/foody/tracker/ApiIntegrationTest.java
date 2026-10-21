@@ -121,6 +121,37 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void searchesAllOwnedOrdersByShortOrFullIdAndCombinesStatus() throws Exception {
+        var session = login();
+        var outsider = login();
+        var id = create(session).get("id").asText();
+        for (int i = 0; i < 12; i++) create(session);
+        for (String term : new String[] {id, id.toUpperCase(java.util.Locale.ROOT), "#" + id.substring(0, 8).toUpperCase(java.util.Locale.ROOT), id.replace("-", "")}) {
+            mvc.perform(get("/api/orders").session(session).param("orderId", term).param("size", "1"))
+                .andExpect(status().isOk()).andExpect(jsonPath("totalElements").value(1))
+                .andExpect(jsonPath("content[0].id").value(id));
+        }
+        mvc.perform(get("/api/orders").session(outsider).param("orderId", id.substring(0, 8)))
+            .andExpect(status().isOk()).andExpect(jsonPath("totalElements").value(0));
+        mvc.perform(get("/api/orders").session(session).param("orderId", id).param("status", "EM_PREPARO"))
+            .andExpect(jsonPath("totalElements").value(0));
+        mvc.perform(patch("/api/orders/" + id + "/status").session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"status\":\"EM_PREPARO\",\"expectedVersion\":0}")).andExpect(status().isOk());
+        mvc.perform(get("/api/orders").session(session).param("orderId", id).param("status", "EM_PREPARO"))
+            .andExpect(jsonPath("totalElements").value(1));
+        mvc.perform(get("/api/orders").session(session).param("orderId", "   "))
+            .andExpect(jsonPath("totalElements").value(13)).andExpect(jsonPath("totalPages").value(2));
+    }
+
+    @Test
+    void rejectsInvalidIdSearchWithoutInterpretingWildcards() throws Exception {
+        var session = login();
+        for (String term : new String[] {"%", "_", "not-an-id", "#", "a".repeat(38)}) {
+            mvc.perform(get("/api/orders").session(session).param("orderId", term)).andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test
     void blocksAnonymousAccessAndRequiresCsrfEvenForLogin() throws Exception {
         mvc.perform(get("/api/orders")).andExpect(status().isUnauthorized()).andExpect(jsonPath("code").value("UNAUTHORIZED"));
         mvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());

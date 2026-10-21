@@ -105,8 +105,15 @@ export const api = {
     await request<void>('/auth/logout', { method: 'POST' });
     resetCsrf();
   },
-  orders: (page: number, status?: Status) =>
-    request<Page<OrderSummary>>(`/orders?page=${page}&size=12${status ? '&status=' + status : ''}`),
+  orders: (page: number, status?: Status, orderId?: string, signal?: AbortSignal) =>
+    request<Page<OrderSummary>>(
+      '/orders?page=' +
+        page +
+        '&size=12' +
+        (status ? '&status=' + status : '') +
+        (orderId ? '&orderId=' + encodeURIComponent(orderId) : ''),
+      { signal },
+    ),
   order: (id: string) => request<Order>('/orders/' + id),
   stats: () => request<Stats>('/orders/stats'),
   create: (order: CreateOrder) =>

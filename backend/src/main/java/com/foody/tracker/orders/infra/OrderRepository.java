@@ -13,8 +13,9 @@ import org.springframework.data.jpa.repository.Query;
 public interface OrderRepository extends JpaRepository<DeliveryOrder, UUID> {
     Optional<DeliveryOrder> findByIdAndOwnerId(UUID id, UUID ownerId);
 
-    @Query("select o from DeliveryOrder o where o.ownerId = :ownerId and (:status is null or o.status = :status)")
-    Page<DeliveryOrder> findOrders(UUID ownerId, OrderStatus status, Pageable pageable);
+    @Query("select o from DeliveryOrder o where o.ownerId = :ownerId and (:status is null or o.status = :status) "
+        + "and (:idPrefix is null or lower(replace(cast(o.id as string), '-', '')) like concat(:idPrefix, '%'))")
+    Page<DeliveryOrder> findOrders(UUID ownerId, OrderStatus status, String idPrefix, Pageable pageable);
 
     @Query("select o.status as status, count(o) as count from DeliveryOrder o where o.ownerId = :ownerId group by o.status")
     List<StatusCount> countByStatus(UUID ownerId);

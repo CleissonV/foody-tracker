@@ -39,3 +39,14 @@ describe('cliente HTTP', () => {
     window.removeEventListener('session-expired', expired);
   });
 });
+
+it('codifica o ID da busca e encaminha o cancelamento da consulta', async () => {
+  const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ content: [] })));
+  vi.stubGlobal('fetch', fetcher);
+  const controller = new AbortController();
+  await api.orders(0, 'RECEBIDO', '#ABCD1234', controller.signal);
+  expect(fetcher).toHaveBeenCalledWith(
+    '/api/orders?page=0&size=12&status=RECEBIDO&orderId=%23ABCD1234',
+    expect.objectContaining({ signal: controller.signal }),
+  );
+});

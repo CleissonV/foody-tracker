@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import java.net.URI;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -37,12 +38,13 @@ public class OrderController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar pedidos do usuário com paginação e filtro de status")
+    @Operation(summary = "Listar pedidos do usuário com paginação, status e busca por ID")
     PageResponse<OrderSummary> list(@AuthenticationPrincipal AuthenticatedUser user,
         @RequestParam(required = false) OrderStatus status,
+        @RequestParam(required = false) @Size(max = 37) String orderId,
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size) {
-        return PageResponse.from(service.list(user.id(), status, page, size));
+        return PageResponse.from(service.list(user.id(), status, orderId, page, size));
     }
 
     @GetMapping("/stats")

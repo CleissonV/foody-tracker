@@ -9,6 +9,7 @@ import com.foody.tracker.shared.api.ApiException;
 import java.time.Clock;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import com.foody.tracker.orders.application.OrderViews.*;
@@ -38,9 +39,9 @@ public class OrderService {
         return OrderResponse.from(order);
     }
 
-    public Page<OrderSummary> list(UUID ownerId, OrderStatus status, int page, int size) {
+    public Page<OrderSummary> list(UUID ownerId, OrderStatus status, String orderId, int page, int size) {
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt", "id"));
-        return orders.findOrders(ownerId, status, pageable).map(OrderSummary::from);
+        return orders.findOrders(ownerId, status, normalizeIdPrefix(orderId), pageable).map(OrderSummary::from);
     }
 
     public OrderResponse find(UUID ownerId, UUID id) { return OrderResponse.from(ownedOrder(ownerId, id)); }
@@ -62,6 +63,17 @@ public class OrderService {
         for (var status : OrderStatus.values()) result.put(status, 0L);
         orders.countByStatus(ownerId).forEach(row -> result.put(row.getStatus(), row.getCount()));
         return result;
+    }
+
+    private String normalizeIdPrefix(String value) {
+        if (value == null || value.isBlank()) return null;
+        var input = value.trim();
+        if (input.startsWith("#")) input = input.substring(1);
+        var prefix = input.replace("-", "").toLowerCase(Locale.ROOT);
+        if (input.length() > 36 || !prefix.matches("[0-9a-f]{1,32}")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ORDER_ID", "Use o ID completo ou o início do ID exibido na tabela.");
+        }
+        return prefix;
     }
 
     private DeliveryOrder ownedOrder(UUID ownerId, UUID id) {

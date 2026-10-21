@@ -1,4 +1,8 @@
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
+import InputAdornment from '@mui/material/InputAdornment';
+import TextField from '@mui/material/TextField';
+import SearchRounded from '@mui/icons-material/SearchRounded';
+import CloseRounded from '@mui/icons-material/CloseRounded';
 import { useQuery } from '@tanstack/react-query';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
@@ -32,12 +36,27 @@ export function OrdersPage({ user }: { user: User }) {
   const sync = useContext(OrderSyncContext);
   const [filter, setFilter] = useState<Status | undefined>();
   const [page, setPage] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  useEffect(() => {
+    if (searchInput.trim() === search) return;
+    const timer = window.setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(0);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchInput, search]);
+  const clearSearch = () => {
+    setSearchInput('');
+    setSearch('');
+    setPage(0);
+  };
   const [creating, setCreating] = useState(false);
   const [selectedId, setSelectedId] = useState<string>();
   const [message, setMessage] = useState('');
   const orders = useQuery({
-    queryKey: ['orders', { page, filter }],
-    queryFn: () => api.orders(page, filter),
+    queryKey: ['orders', { page, filter, search }],
+    queryFn: ({ signal }) => api.orders(page, filter, search, signal),
   });
   const stats = useQuery({ queryKey: ['stats'], queryFn: api.stats });
   const changeFilter = (status?: Status) => {
@@ -143,6 +162,37 @@ export function OrdersPage({ user }: { user: User }) {
               </h2>
               <p>Acompanhe e atualize cada etapa da entrega.</p>
             </div>
+            <TextField
+              className="order-id-search"
+              label="Buscar pedido por ID"
+              placeholder="Ex.: #A1B2C3D4"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              size="small"
+              helperText="ID completo ou início do ID exibido."
+              slotProps={{
+                htmlInput: { maxLength: 37, autoComplete: 'off' },
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchRounded fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchInput ? (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="Limpar busca"
+                        onClick={clearSearch}
+                        edge="end"
+                        size="small"
+                      >
+                        <CloseRounded fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : undefined,
+                },
+              }}
+            />
           </div>
           <div className="status-tabs" role="group" aria-label="Filtrar por status">
             <button className={!filter ? 'selected' : ''} onClick={() => changeFilter()}>
@@ -272,19 +322,31 @@ export function OrdersPage({ user }: { user: User }) {
                   <Inventory2Outlined sx={{ fontSize: 30 }} />
                 </div>
                 <h3>
-                  {filter ? 'Nenhum pedido nesta etapa.' : 'Sua próxima entrega começa aqui.'}
+                  {search
+                    ? 'Nenhum pedido encontrado.'
+                    : filter
+                      ? 'Nenhum pedido nesta etapa.'
+                      : 'Sua próxima entrega começa aqui.'}
                 </h3>
                 <p>
-                  {filter
-                    ? 'Os pedidos aparecem aqui assim que chegarem a este status.'
-                    : 'Crie seu primeiro pedido e acompanhe cada passo até a entrega.'}
+                  {search
+                    ? 'Confira o ID informado ou altere o filtro de status.'
+                    : filter
+                      ? 'Os pedidos aparecem aqui assim que chegarem a este status.'
+                      : 'Crie seu primeiro pedido e acompanhe cada passo até a entrega.'}
                 </p>
                 <Button
                   variant="outlined"
-                  startIcon={filter ? undefined : <AddRounded />}
-                  onClick={() => (filter ? changeFilter() : setCreating(true))}
+                  startIcon={filter || search ? undefined : <AddRounded />}
+                  onClick={() =>
+                    search ? clearSearch() : filter ? changeFilter() : setCreating(true)
+                  }
                 >
-                  {filter ? 'Ver todos os pedidos' : 'Criar primeiro pedido'}
+                  {search
+                    ? 'Limpar busca'
+                    : filter
+                      ? 'Ver todos os pedidos'
+                      : 'Criar primeiro pedido'}
                 </Button>
               </div>
             )
@@ -322,6 +384,7 @@ export function OrdersPage({ user }: { user: User }) {
             setCreating(false);
             setPage(0);
             setFilter(undefined);
+            clearSearch();
             setSelectedId(id);
             setMessage('Pedido criado. Vamos preparar uma boa entrega!');
           }}
