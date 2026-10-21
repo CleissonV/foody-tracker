@@ -37,3 +37,17 @@ node scripts/verify-production.mjs
 ```
 
 Credenciais, arquivos .env, artefatos de build e dados locais são excluídos do Git e do upload para a Vercel. O perfil H2 e a suíte E2E continuam disponíveis para execução sem serviços externos.
+
+## Validação da publicação — 21/10/2026
+
+- Produção: https://foody-tracker-lume-agencia.vercel.app/
+- Revisão de aplicação publicada: `472e5ffd5dd7c4fcc6e6c97248a9670bc85012c2`.
+- Deployment: `dpl_514w2nWawX18wyLqZ8NHhBQLTB1G`, promovido ao domínio definitivo.
+- 60 testes Java e 12 cenários E2E desktop/mobile aprovados.
+- Verificação com PostgreSQL real aprovada: duas instâncias, sessões compartilhadas, SSE entre instâncias, fotos, revogação de sessão e dados preservados após reinício dos dois processos.
+- Regressão PostgreSQL de listagem sem filtro, por status, por ID e por ambos os filtros aprovada. Não se enviam parâmetros nulos para predicados opcionais no SQL.
+- Smoke HTTP no domínio definitivo e verificação visual no navegador aprovados: login, pedido criado no deployment anterior, status, tabela e filtros.
+- Container Java com compilação tier 1 para reduzir o tempo de início; logs do deployment registraram inicialização em aproximadamente 12 segundos. O ambiente escala a zero e o primeiro acesso pode demorar.
+- A proteção de autenticação da Vercel continua ativa; o link pode exigir acesso à equipe antes do login da aplicação.
+
+Esta documentação registra a variante publicada; a branch `main` e seus comandos H2 foram preservados.
