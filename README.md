@@ -2,6 +2,12 @@
 
 Aplicação full-stack para acompanhar um pedido do recebimento à entrega. Java 21 + Spring Boot 3.5, React + TypeScript, MUI e Vite. Identidade visual baseada no site da Foody: fonte Sen, coral e tons neutros.
 
+## Publicação na Vercel
+
+Front-end: https://foody-tracker-lume-agencia.vercel.app/. Build de produção publicado e promovido pela CLI no projeto `lume-agencia/foody-tracker`, com acesso protegido pelo login da Vercel.
+
+**Publicação parcial:** a API Java ainda não foi hospedada. A consulta inicial de sessão em `/api/auth/me` retorna `404`, portanto a aplicação exibe indisponibilidade; cadastro, login, perfil e pedidos não funcionam nesse endereço até conectar a API com banco persistente. Os testes completos aprovados foram executados localmente e no GitHub Actions, com a API real em execução, e não comprovam funcionamento integrado na Vercel.
+
 ## Começar com Docker
 
 Pré-requisito: Docker com Compose e engine em execução.
