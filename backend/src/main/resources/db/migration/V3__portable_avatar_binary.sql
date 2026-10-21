@@ -1,0 +1,1 @@
+ALTER TABLE app_users ALTER COLUMN avatar_data BINARY VARYING;

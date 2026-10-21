@@ -1,0 +1,14 @@
+FROM maven:3.9.11-eclipse-temurin-21 AS build
+WORKDIR /build
+COPY pom.xml .
+COPY src ./src
+RUN mvn -B -ntp verify
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+RUN groupadd --gid 10001 foody && useradd --uid 10001 --gid foody --no-create-home foody
+COPY --from=build --chown=foody:foody /build/target/tracker-1.0.0.jar app.jar
+ENV SPRING_PROFILES_ACTIVE=production SERVER_ADDRESS=0.0.0.0 PORT=8080
+USER foody
+EXPOSE 8080
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70.0", "-jar", "app.jar"]

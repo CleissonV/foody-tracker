@@ -1,0 +1,9 @@
+**/node_modules
+**/target
+**/dist
+**/playwright-report
+**/test-results
+**/data
+**/.env*
+.git
+.vercel

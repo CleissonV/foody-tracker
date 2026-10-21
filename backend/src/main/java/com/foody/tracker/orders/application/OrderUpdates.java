@@ -1,6 +1,8 @@
 package com.foody.tracker.orders.application;
 
 import java.util.UUID;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
@@ -22,6 +24,17 @@ public class OrderUpdates {
 
     @TransactionalEventListener
     public void committed(OrderChanged event) {
+        publish(event);
+    }
+
+    public Set<UUID> activeOwners() {
+        return subscriptions.values().stream().map(Subscription::ownerId).collect(Collectors.toUnmodifiableSet());
+    }
+
+    /** A null order ID means reload all order projections; no order data travels in this signal. */
+    public void refresh(UUID ownerId) { publish(new OrderChanged(ownerId, null)); }
+
+    private void publish(OrderChanged event) {
         subscriptions.values().forEach(subscription -> {
             if (subscription.ownerId().equals(event.ownerId())) {
                 try { subscription.consumer().accept(event); }

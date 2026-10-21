@@ -3,7 +3,6 @@ package com.foody.tracker.auth.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Version;
 import jakarta.persistence.Table;
 import java.util.UUID;
@@ -19,7 +18,6 @@ public class AppUser {
     private String email;
     @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
-    @Lob
     @Column(name = "avatar_data")
     private byte[] avatarData;
     @Column(name = "avatar_version", nullable = false)

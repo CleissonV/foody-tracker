@@ -2,6 +2,7 @@ package com.foody.tracker.orders.api;
 
 import com.foody.tracker.auth.application.AuthService;
 import com.foody.tracker.auth.application.AuthenticatedUser;
+import com.foody.tracker.auth.application.StreamSessionAccess;
 import com.foody.tracker.orders.application.OrderUpdates;
 import com.foody.tracker.shared.api.ApiException;
 import jakarta.annotation.PreDestroy;
@@ -15,8 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -26,9 +25,12 @@ import org.springframework.web.util.WebUtils;
 public class OrderStreamController {
     private final OrderUpdates updates;
     private final AuthService auth;
+    private final StreamSessionAccess sessions;
     private final ConcurrentHashMap<UUID, Connection> connections = new ConcurrentHashMap<>();
 
-    public OrderStreamController(OrderUpdates updates, AuthService auth) { this.updates = updates; this.auth = auth; }
+    public OrderStreamController(OrderUpdates updates, AuthService auth, StreamSessionAccess sessions) {
+        this.updates = updates; this.auth = auth; this.sessions = sessions;
+    }
 
     @GetMapping(value = "/api/orders/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public synchronized ResponseEntity<SseEmitter> events(@AuthenticationPrincipal AuthenticatedUser user, HttpSession session) {
@@ -38,7 +40,8 @@ public class OrderStreamController {
         var id = UUID.randomUUID();
         var connection = new Connection(id, user, session);
         connections.put(id, connection);
-        connection.unsubscribe = updates.subscribe(user.id(), event -> connection.send("orders-changed", Map.of("orderId", event.orderId())));
+        connection.unsubscribe = updates.subscribe(user.id(), event -> connection.send("orders-changed",
+            event.orderId() == null ? Map.of("refresh", true) : Map.of("orderId", event.orderId())));
         if (!connections.containsKey(id)) connection.unsubscribe.run();
         connection.emitter.onCompletion(connection::remove);
         connection.emitter.onTimeout(connection::close);
@@ -73,10 +76,13 @@ public class OrderStreamController {
             try {
                 synchronized (WebUtils.getSessionMutex(session)) {
                     // Follow the current context after a legitimate profile/password change rotates this session.
-                    var context = session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-                    var current = context instanceof SecurityContext security ? security.getAuthentication() : null;
-                    if (current == null || !(current.getPrincipal() instanceof AuthenticatedUser principal)
-                            || !principal.id().equals(user.id()) || !auth.sessionIsCurrent(principal)) {
+                    var principal = sessions.current(session);
+                    if (principal == null && sessions.reconnectWhenMissing()) {
+                        // Rotation may have replaced the stored ID. Reconnect using the browser's current cookie.
+                        close();
+                        return;
+                    }
+                    if (principal == null || !principal.id().equals(user.id()) || !auth.sessionIsCurrent(principal)) {
                         emitter.send(SseEmitter.event().name("session-expired").data(Map.of()));
                         close();
                         return;

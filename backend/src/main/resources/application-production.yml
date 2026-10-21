@@ -1,0 +1,24 @@
+spring:
+  flyway:
+    locations: classpath:db/postgresql
+  datasource:
+    hikari:
+      maximum-pool-size: 4
+      minimum-idle: 0
+      connection-timeout: 20000
+      idle-timeout: 60000
+      max-lifetime: 300000
+server:
+  address: 0.0.0.0
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        secure: true
+app:
+  docs-enabled: false
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
