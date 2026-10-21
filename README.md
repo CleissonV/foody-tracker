@@ -179,12 +179,14 @@ H2 em arquivo e sessões na memória atendem uma instância local. Alta disponib
 git log --oneline
 ```
 
-O ZIP inclui `.git` com o histórico. Após extrair, execute os comandos na pasta `foody-tracker`. Para publicar, crie um repositório vazio no GitHub e use a URL real:
+Repositório privado: [CleissonV/foody-tracker](https://github.com/CleissonV/foody-tracker). O histórico completo está na branch `main`; cada push executa os checks do GitHub Actions. Acesso requer autorização do proprietário.
 
 ```sh
-git remote add origin <URL_DO_SEU_REPOSITORIO>
-git push -u origin main
+git clone https://github.com/CleissonV/foody-tracker.git
+cd foody-tracker
 ```
+
+O ZIP também inclui `.git` com o histórico. O envio ao GitHub não implica publicação em produção: a configuração atual de H2 e sessões exige uma API com volume persistente e uma única instância.
 
 Não publique `data/`, credenciais ou dependências. Esses caminhos estão no `.gitignore`.
 

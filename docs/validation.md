@@ -6,8 +6,7 @@ Validação realizada em **20/10/2026**, no Windows, com JDK 21 e Node.js 24. Os
 | --- | --- |
 | `mvnw verify` | 58 testes aprovados: 33 de domínio, 22 de integração e 3 regras de arquitetura |
 | `npm test` | 30 testes aprovados em nove arquivos |
-| E2E de pedidos, busca e SSE | 8 cenários aprovados nesta entrega: quatro em desktop e quatro com viewport móvel |
-| E2E de endereço e perfil | 4 cenários aprovados na revisão anterior; componentes desses fluxos não foram alterados nesta entrega |
+| E2E completo | 12 cenários aprovados na mesma execução: seis em desktop e seis com viewport móvel; zero falhas, retries/flaky ou cenários ignorados |
 | `npm run build` | TypeScript e bundle de produção aprovados, sem alerta de chunk circular ou tamanho |
 | `npm run lint` | Aprovado com zero warnings |
 | `npm run format:check` | Aprovado |
@@ -25,7 +24,7 @@ Validação realizada em **20/10/2026**, no Windows, com JDK 21 e Node.js 24. Os
 | Migração de perfil | V2 aplicada ao banco existente; oito pedidos preservados |
 | Compose | Configuração aceita pelo parser do Docker Compose; tags das quatro imagens encontradas no registry |
 
-Na alteração da busca por ID, passaram **58 testes Java, 30 testes do front-end e 8 cenários de navegador**. Os quatro cenários adicionais de endereço/perfil foram aprovados na revisão anterior. JaCoCo registrou **447/472 linhas cobertas (94,7%)** e **113/150 branches (75,3%)** no back-end, incluindo contratos e configuração. O relatório é gerado por execução; os percentuais não são uma afirmação de ausência de defeitos.
+Após a alteração da busca por ID, a revisão completa aprovou **12 cenários de navegador** na mesma execução, incluindo pedidos, perfil, endereço, sincronização e busca. Os **58 testes Java e 30 testes do front-end** também passaram na validação da implementação. JaCoCo registrou **447/472 linhas cobertas (94,7%)** e **113/150 branches (75,3%)** no back-end, incluindo contratos e configuração. O relatório é gerado por execução; os percentuais não são uma afirmação de ausência de defeitos.
 
 ## Fluxo comprovado
 
@@ -43,6 +42,7 @@ Os testes reais revelaram um problema na limpeza do cache durante a troca de ses
 ## Limites da verificação
 
 - Os containers **não foram construídos/executados**: a engine Docker local estava indisponível. A validação do Compose e das tags não substitui executar `docker compose up --build`.
-- O workflow GitHub Actions foi criado, mas não executado remotamente. Não foi criado ou publicado um repositório remoto.
+- Repositório privado publicado em https://github.com/CleissonV/foody-tracker, com todo o histórico. O primeiro push disparou o GitHub Actions; o resultado remoto deve ser consultado na aba Actions.
+- Produção ainda não publicada. O backend atual exige uma instância Java com volume persistente para o H2; sessões e distribuição de eventos também são locais à instância. O deploy na Vercel exige hospedar essa API externamente ou adaptar persistência, sessões e eventos para serviços compartilhados antes de executar múltiplas réplicas.
 - Não foram executados teste de carga, pentest, análise SAST do Java ou teste em celular físico. O audit do npm abrange dependências de runtime, não certifica segurança da aplicação.
 - O relatório JaCoCo completo e os relatórios Playwright são gerados nos diretórios descritos no README; artefatos de build, dados e sessões não são incluídos no ZIP.
