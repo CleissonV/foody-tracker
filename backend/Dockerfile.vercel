@@ -11,4 +11,4 @@ COPY --from=build --chown=foody:foody /build/target/tracker-1.0.0.jar app.jar
 ENV SPRING_PROFILES_ACTIVE=production SERVER_ADDRESS=0.0.0.0 PORT=8080
 USER foody
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70.0", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70.0", "-XX:TieredStopAtLevel=1", "-jar", "app.jar"]

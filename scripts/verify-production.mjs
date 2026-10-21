@@ -179,6 +179,22 @@ try {
   assert.equal(loaded.status, 'RECEBIDO');
   assert.equal(Number(loaded.total), 25);
   console.log('PASS cross-instance SSE and PostgreSQL order persistence');
+  const unfiltered = await client.request(8083, '/api/orders?page=0&size=12');
+  assert.equal(unfiltered.content[0].id, order.id);
+  for (const query of [
+    'status=RECEBIDO',
+    'orderId=' + order.id.slice(0, 8),
+    'status=RECEBIDO&orderId=' + order.id.slice(0, 8),
+  ]) {
+    const filtered = await client.request(8083, '/api/orders?page=0&size=12&' + query);
+    assert.equal(filtered.content[0].id, order.id);
+  }
+  const noMatch = await client.request(
+    8083,
+    '/api/orders?page=0&size=12&status=ENTREGUE&orderId=' + order.id.slice(0, 8),
+  );
+  assert.equal(noMatch.totalElements, 0);
+  console.log('PASS unfiltered listing, status, ID and combined filters on PostgreSQL');
 
   await client.request(8082, `/api/orders/${order.id}/status`, 'PATCH', {
     status: 'EM_PREPARO',
