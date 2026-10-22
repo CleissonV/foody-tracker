@@ -150,6 +150,8 @@ Decisões e evolução: [system design](docs/system-design.md) · [ADRs](docs/de
 
 Evidências: [validação local original de 20/10/2026](docs/validation.md) e [validação de produção de 21/10/2026](https://github.com/CleissonV/foody-tracker/blob/deploy/vercel-postgres/docs/production.md#validação-da-publicação--21102026). O registro original documenta a publicação parcial da época; a configuração atual está descrita neste README e no documento de produção.
 
+Roteiro executado em um clone público novo, com resultados e capturas: [validação como avaliador](docs/reviewer-check.md).
+
 ## Testes e qualidade
 
 API, da pasta `backend`:
